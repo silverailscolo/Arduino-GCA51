@@ -54,6 +54,7 @@
 
 #define VERSION 151                            // 106 for LocoIO functions, must be type int
 #define DEBUG                                  // Uncomment this line to debug through the serial monitor
+#define JMRI4                                  // Uncomment this line to send Lissy IR message instead of Lissy RFID-7
 #define LN_TX_PIN       7                      // Arduino Pin used as LocoNet Tx; Rx Pin is always the ICP Pin
 #define RST_PIN         6                      // Arduino Pin used as ResetPowerDownPin
 #define SDA_1_PIN      10                      // The SDA_1 pin provides the Arduino with tag data from Reader 1
@@ -84,7 +85,11 @@ lnMsg *LnPacket;                               // pointer to lnMsg
 lnMsg SendPacketSensor[LN_BUFF_LEN];           // SendPacketSensor is now a uint8_t data[16] array. Must set bounds in Arduino 1.8.19
 
 uint8_t uiLnSendCheckSumIdx = 13;
-uint8_t uiLnSendLength = 14; // 14 bytes
+#ifdef JMRI4
+  uint8_t uiLnSendLength = 8;  // 8 bytes legacy LISSY format
+#else
+  uint8_t uiLnSendLength = 14; // 14 bytes RFID-7 as in v150
+#endif
 uint8_t uiLnSendMsbIdx = 12;
 uint8_t uiStartChkSen;
 
@@ -534,8 +539,34 @@ void loop()   // *************** MAIN LOOP () *************************
               }
 
               // GCA51 v150 code updated for latest rfid2ln,
-              setMessageHeader(uiBufWrIdx, uiRfidPort); // fills SendPacketSensor[i].data[0] till .data[4] with data. Address is the port software address.
+              setMessageHeader(uiBufWrIdx, uiRfidPort); // fills SendPacketSensor[i].data[0] till .data[4] with data. Address used is the port software address of uiRfidPort.
 
+#ifdef JMRI4
+
+              SendPacketSensor[uiBufWrIdx].data[7] = 0;                                                       // clear the byte for the MS bits of the data bytes
+              for (i=0, j=3; i< 4; i++, j++)                                                                  // Fill SendPacketSensor.data[5-6] with 2 data bytes information from the RFID card
+              {
+                 if (mfrc522[uiRfidPort].uid.size > i)
+                 {
+                    SendPacketSensor[uiBufWrIdx].data[j] = mfrc522[uiRfidPort].uid.uidByte[i] & 0x7F;         // LocoNet bytes have only 7 bits;
+                                                                                                              // MSbit is transmitted in the SendPacket.data[10] = LnMessage[12])
+                    if (mfrc522[uiRfidPort].uid.uidByte[i] & 0x80)                                            // if there is an MSB-bit in the data-byte
+                    {
+                       SendPacketSensor[uiBufWrIdx].data[6] |= 1 << i;                                        // bring this MSB-bit to the last databyte [6], together with the other MSB-bits
+                    }
+                 } else {
+                    SendPacketSensor[uiBufWrIdx].data[j] = 0;
+                 }
+              } // for (uint8_t i=4, j=3
+
+              SendPacketSensor[uiBufWrIdx].data[7] = 0xFF;                                                   // Reset the checksum data byte
+              for (j=0; j<7; j++)
+              {
+                SendPacketSensor[uiBufWrIdx].data[7] ^= SendPacketSensor[uiBufWrIdx].data[j];                // calculate the checksum for header + data of the RFID-7 message
+              }
+
+
+#else
               SendPacketSensor[uiBufWrIdx].data[12] = 0;                                                      // clear the byte for the MS bits of the data bytes
               for (i=0, j=5; i< UID_LEN; i++, j++)                                                            // Fill SendPacketSensor.data[5-12] with 7 data bytes information from the RFID card
               {
@@ -557,7 +588,7 @@ void loop()   // *************** MAIN LOOP () *************************
               {
                 SendPacketSensor[uiBufWrIdx].data[13] ^= SendPacketSensor[uiBufWrIdx].data[j];                // calculate the checksum for header + data of the RFID-7 message
               }
-
+#endif
             #ifdef DEBUG
               if (bSerialOk) {
                  Serial.print(uiRfidPort); Serial.print(F(" built LN mess.: "));
@@ -599,7 +630,7 @@ void loop()   // *************** MAIN LOOP () *************************
               if (bSerialOk) {
               Serial.println(F("Send sensor reset..."));
               }
-            }
+            #endif
             // set sensor Inactive/HIGH (see rfid2ln)
             bitWrite(svtable.svt.pincfg[uiRfidPort].value2, 4, 0x1); // Give .value2 the status of input [n] because the next LocoNet.send (OPC_INPUT_REP... function needs this information
             LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[uiRfidPort].value1, svtable.svt.pincfg[uiRfidPort].value2); // Send the state change to LocoNet
@@ -662,9 +693,19 @@ void loop()   // *************** MAIN LOOP () *************************
       Serial.print(F("LN mess sent successfully for RFID tag uid (decoded to verify): "));
       // add rfid_hi byte
       char hexCar[2];
-      int j, hi;
-      int rfidHi = SendPacketSensor[uiBufRdIdx].data[12]; // MSbits are transmitted via byte [12]
-      for (j=5; j<12; j++)                                // print the 7 RFID UID HEX bytes
+      int j, hi, start, end, rfidHi;
+
+      #ifdef JMRI4
+        rfidHi = SendPacketSensor[uiBufRdIdx].data[6]; // MSbits are transmitted via byte [6]
+        start = 4;
+        end = 6;
+      #else
+        rfidHi = SendPacketSensor[uiBufRdIdx].data[12]; // MSbits are transmitted via byte [12]
+        start = 5;
+        end = 12;
+      #endif
+
+      for (j=start; j<end; j++)                                // print the 7 RFID UID HEX bytes
       {
         hi = 0x0;
         if ((rfidHi >> j)%2 == 1) hi = 0x80;
@@ -704,9 +745,8 @@ void setMessageHeader(uint8_t rfIndex, uint8_t pIndex)
   uint8_t odd_even;
   uint16_t sensorAddr;
 
-  SendPacketSensor[rfIndex].data[0] = 0xE4; // OPC - variable length message
-  SendPacketSensor[rfIndex].data[1] = uiLnSendLength; // 14 bytes length
-  SendPacketSensor[rfIndex].data[2] = 0x41; // report type unique to OPC_LISSY_REP
+  SendPacketSensor[rfIndex].data[0] = 0xE4; // OPC - variable length message OPC_LISSY_REP
+  SendPacketSensor[rfIndex].data[1] = uiLnSendLength;
 
   if(bitRead (svtable.svt.pincfg[pIndex].value2, 5)) odd_even = 2;                                             // bitread for bit 5 on SV5, SV8, SV11, SV14 etc.
   else odd_even = 1;
@@ -716,13 +756,25 @@ void setMessageHeader(uint8_t rfIndex, uint8_t pIndex)
 
   // sensorAddr is the complete sensor address.
   // Now we send this Address to LocoNet but we must split the port softwareAddress into a high part and a low part
-  SendPacketSensor[rfIndex].data[3] = sensorAddr >> 7;                                                               // addr.high for RFID-7 report to Rocrail
-  SendPacketSensor[rfIndex].data[4] = sensorAddr & 0x7F;                                                             // addr.low  for RFID-7 report to Rocrail
-  #ifdef DEBUG
-    Serial.print ("sensorAddr = "); Serial.println (sensorAddr);
-    Serial.print ("Addr_high  = "); Serial.println (sensorAddr >> 7);
-    Serial.print ("Addr_low   = "); Serial.println (sensorAddr & 0x7F);
-  #endif
+  uint8_t addrHi = sensorAddr >> 7;                                                               // addr.high
+  uint8_t addrLo = sensorAddr & 0x7F;                                                             // addr.low
+
+
+#ifdef JMRI4
+  SendPacketSensor[rfIndex].data[2] = 0x00; // shorter LISSY IR report
+  SendPacketSensor[rfIndex].data[4] = addrHi;                                                             // addr.high for LISSY IR report to JMRI 4
+  SendPacketSensor[rfIndex].data[5] = addrLo;                                                             // addr.low  for LISSY IR report
+# else
+  SendPacketSensor[rfIndex].data[2] = 0x41; // report type unique to RFID-5/7
+  SendPacketSensor[rfIndex].data[3] = addrHi;                                                             // addr.high for RFID-7 report to Rocrail or JMRI 5.12+
+  SendPacketSensor[rfIndex].data[4] = addrLo;                                                             // addr.low  for RFID-7 report
+#endif
+
+#ifdef DEBUG
+  Serial.print ("sensorAddr = "); Serial.println (sensorAddr);
+  Serial.print ("Addr_high  = "); Serial.println (sensorAddr >> 7);
+  Serial.print ("Addr_low   = "); Serial.println (sensorAddr & 0x7F);
+#endif
 }
 
 /********************************** LocoIO methods ***************************************/
