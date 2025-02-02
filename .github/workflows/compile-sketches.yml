@@ -1,0 +1,183 @@
+# This workflow compiles the sketches for one of each distinct type of active official Arduino board.
+#
+# This requires the use of external components (e.g., libraries, boards platform, toolchain), so it is possible for
+# compilations to be broken by bugs in the external components, even though the example itself is perfect.
+#
+# If this happens, the procedure is:
+# - Report the bug to the appropriate issue tracker.
+# - Adjust this workflow to remove the compilation for the specific board/sketch combination that is failing due to the
+#   bug.
+# - Add a comment to the workflow providing the URL of the issue report.
+# - Once the bug is fixed and the fix released, revert the commit that removed the failing compilation.
+# - If the issue is closed as "wontfix", add a comment to the affected examples documenting the incompatibility and open
+#   an issue requesting that the associated tutorials be updated.
+
+name: Compile Sketches
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**"
+      - "!.github/workflows/compile-sketches.ya?ml"
+      - "!GCA51/**"
+      - "**.adoc"
+      - "**.jpg"
+      - "**.md"
+      - "**.png"
+      - "**.txt"
+  push:
+    paths-ignore:
+      - "**"
+      - "!.github/workflows/compile-sketches.ya?ml"
+      - "!GCA51/**"
+      - "**.adoc"
+      - "**.jpg"
+      - "**.md"
+      - "**.png"
+      - "**.txt"
+  # Scheduled trigger checks for breakage caused by changes to external resources (libraries, platforms)
+  schedule:
+    # run every Tuesday at 3 AM UTC
+    - cron: "0 3 * * 2"
+  # workflow_dispatch event allows the workflow to be triggered manually
+  # See: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#workflow_dispatch
+  workflow_dispatch:
+  # repository_dispatch event allows the workflow to be triggered via the GitHub API
+  # See: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#repository_dispatch
+  repository_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.board.fqbn }}
+    runs-on: ubuntu-latest
+
+    env:
+      # Libraries to install for all boards
+      UNIVERSAL_LIBRARIES: |
+        - name: Servo
+        - name: LiquidCrystal
+        - name: CapacitiveSensor
+
+      # Sketch paths to compile (recursive) for all boards
+      UNIVERSAL_SKETCH_PATHS: |
+        - GCA51
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        board:
+          # For testing the sketches
+          - fqbn: arduino:avr:uno
+            usb: false
+            serial1: false
+            starter-kit: true
+            tone: true
+            a5: true
+          # Adding this in addition to the Uno because it has 1.5 kB less available flash
+          - fqbn: arduino:avr:nano
+            usb: false
+            serial1: false
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:avr:leonardo
+            usb: true
+            serial1: true
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:esp32:nano_nora
+            usb: false
+            serial1: true
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:megaavr:uno2018:mode=off
+            usb: false
+            serial1: true
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:renesas_uno:minima
+            usb: true
+            serial1: true
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:renesas_uno:unor4wifi
+            usb: true
+            serial1: true
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:renesas_portenta:portenta_c33
+            usb: true
+            serial1: true
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:samd:mkrzero
+            usb: true
+            serial1: true
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:mbed_giga:giga
+            usb: false
+            serial1: true
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:mbed_nano:nano33ble
+            usb: false
+            serial1: true
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:mbed_nano:nanorp2040connect
+            usb: false
+            serial1: true
+            starter-kit: false
+            tone: true
+            # WiFiNINA library is required to use pins A4-A7.
+            a5: false
+          - fqbn: arduino:mbed_portenta:envie_m7
+            usb: false
+            serial1: true
+            starter-kit: false
+            tone: true
+            a5: true
+          - fqbn: arduino:sam:arduino_due_x
+            usb: true
+            serial1: true
+            starter-kit: false
+            # Bug report: https://github.com/arduino/ArduinoCore-sam/issues/24
+            # Change the value to true once it is fixed.
+            tone: false
+            a5: true
+
+        # Make board type-specific customizations to the matrix jobs
+        include:
+          - board:
+              # Boards with Keyboard+Mouse library compatibility
+              usb: true
+            # Install these libraries in addition to the ones defined by env.UNIVERSAL_LIBRARIES
+            usb-libraries: |
+              - name: Keyboard
+              - name: Mouse
+            # Compile these sketches in addition to the ones defined by env.UNIVERSAL_SKETCH_PATHS
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compile sketches
+        uses: arduino/compile-sketches@v1
+        with:
+          fqbn: ${{ matrix.board.fqbn }}
+          libraries: |
+            ${{ env.UNIVERSAL_LIBRARIES }}
+            ${{ matrix.usb-libraries }}
+          sketch-paths: |
+            ${{ env.UNIVERSAL_SKETCH_PATHS }}

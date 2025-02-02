@@ -1,47 +1,47 @@
- /**************************************************************************
-    LocoGCA51 - Configurable Arduino LocoNet + RFID Module
-    Copyright (C) 2016 Gerard Remmerswaal
-    Copyright (C) 2025 Egbert Broerse  
+/**************************************************************************
+   LocoGCA51 - Configurable Arduino LocoNet + RFID Module
+   Copyright (C) 2016 Gerard Remmerswaal
+   Copyright (C) 2025 Egbert Broerse
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- ------------------------------------------------------------------------
- DESCRIPTION:
-    This software uses two RFID readers to read RFID tags.
-    The data from the tags are sent to Rocrail with LocoNet communication.
-    On the GCA51 board are 8 extra inputs available for inputs/outputs.
-    Configuration is done through SV LocoNet protocol and can be configured
-    from Rocrail (Programming->GCA->GCA50).
-    The "heart" of the GCA51 is an Arduino Nano board.
- ------------------------------------------------------------------------
- PIN ASSIGNMENT:
-   0,1 -> Serial, used to debug and LocoNet Monitor (uncomment DEBUG)
-   2,3,4,5,6 -> Configurable I/O from 1 to 5
-   7 -> LocoNet TX
-   8 -> LocoNet RX
-   9,10,11,12,13 -> Configurable I/O from 6 to 10
-   A0,A1,A2,A3,A4,A5-> Configurable I/O from 11 to 16
- ------------------------------------------------------------------------
- CREDITS:
- * Based on MRRwA LocoNet libraries for Arduino - http://mrrwa.org/ and
-   the LocoNet Monitor example.
- * Inspired in GCA50 board from Peter Giling - http://www.phgiling.net/
- * Idea also inspired in LocoShield from SPCoast - http://www.scuba.net/
- * Thanks also to Rocrail group - http://www.rocrail.org
- * Thanks to the LocoNet part of software from Dani Guisado/ClubNCaldes
- ------------------------------------------------------------------------
- ISSUES
- * sensor address explodes after 10 reads/LN_BUFF_LEN==10
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------
+  DESCRIPTION:
+   This software uses two RFID readers to read RFID tags.
+   The data from the tags are sent to Rocrail with LocoNet communication.
+   On the GCA51 board are 8 extra inputs available for inputs/outputs.
+   Configuration is done through SV LocoNet protocol and can be configured
+   from Rocrail (Programming->GCA->GCA50).
+   The "heart" of the GCA51 is an Arduino Nano board.
+  ------------------------------------------------------------------------
+  PIN ASSIGNMENT:
+  0,1 -> Serial, used to debug and LocoNet Monitor (uncomment DEBUG)
+  2,3,4,5,6 -> Configurable I/O from 1 to 5
+  7 -> LocoNet TX
+  8 -> LocoNet RX
+  9,10,11,12,13 -> Configurable I/O from 6 to 10
+  A0,A1,A2,A3,A4,A5-> Configurable I/O from 11 to 16
+  ------------------------------------------------------------------------
+  CREDITS:
+  Based on MRRwA LocoNet libraries for Arduino - http://mrrwa.org/ and
+  the LocoNet Monitor example.
+  Inspired in GCA50 board from Peter Giling - http://www.phgiling.net/
+  Idea also inspired in LocoShield from SPCoast - http://www.scuba.net/
+  Thanks also to Rocrail group - http://www.rocrail.org
+  Thanks to the LocoNet part of software from Dani Guisado/ClubNCaldes
+  ------------------------------------------------------------------------
+  ISSUES
+  sensor address explodes after 10 reads/LN_BUFF_LEN==10
 *************************************************************************/
 
 #include <LocoNet.h>
@@ -54,8 +54,8 @@
 
 #define VERSION 151                            // 106 for LocoIO functions, must be type int
 #define DEBUG                                  // Uncomment this line to debug through the serial monitor
-#define JMRI4                                  // Uncomment this line to send Lissy IR message instead of Lissy RFID-7
-#define LN_TX_PIN       7                      // Arduino Pin used as LocoNet Tx; Rx Pin is always the ICP Pin
+//#define JMRI4                                  // Uncomment this line to send Lissy IR messages instead of Lissy RFID-7
+#define LN_TX_PIN       7                      // Arduino Pin used as LocoNet Tx; Rx Pin is always the ICP Pin 
 #define RST_PIN         6                      // Arduino Pin used as ResetPowerDownPin
 #define SDA_1_PIN      10                      // The SDA_1 pin provides the Arduino with tag data from Reader 1
 #define SDA_2_PIN       9                      // The SDA_2 pin provides the Arduino with tag data from Reader 2
@@ -86,9 +86,9 @@ lnMsg SendPacketSensor[LN_BUFF_LEN];           // SendPacketSensor is now a uint
 
 uint8_t uiLnSendCheckSumIdx = 13;
 #ifdef JMRI4
-  uint8_t uiLnSendLength = 8;  // 8 bytes legacy LISSY format
+uint8_t uiLnSendLength = 8;  // 8 bytes legacy LISSY format
 #else
-  uint8_t uiLnSendLength = 14; // 14 bytes RFID-7 as in v150
+uint8_t uiLnSendLength = 14; // 14 bytes RFID-7 as in v150
 #endif
 uint8_t uiLnSendMsbIdx = 12;
 uint8_t uiStartChkSen;
@@ -120,10 +120,10 @@ uint8_t uiFirstReaderIdx = 0;
 // To connect two RFID-RC522 sensors to the GCA185/GCA51 you need the Arduino pin numbers 2, 10, 11, 12 and 13, so you cannot use these pins for another purpose.
 // The LocoNet pins, needed for the communication, are the Arduino Nano pin numbers 7 and 8
 
-byte     pinMap[8] = {14,15,16,17,18,19,2,3};    // The analog inputs are used as digital I/O and that is why the names of these ports are changed.
-                                                 // So, A0 == D14,  A1 == D15,  A2 == D16, ....A7 == D21. 2 and 3 are D2 and D3. These two I/O use INT0 and INT1
+byte     pinMap[8] = {14, 15, 16, 17, 18, 19, 2, 3}; // The analog inputs are used as digital I/O and that is why the names of these ports are changed.
+// So, A0 == D14,  A1 == D15,  A2 == D16, ....A7 == D21. 2 and 3 are D2 and D3. These two I/O use INT0 and INT1
 uint16_t softwareAddress[16];                    // composite software address of all the hardware ports (3-8 not used on GCA51)
-volatile byte IO_status[8] = {0,0,0,0,0,0,0,0};  // remember the last I/O status. '1' means port is Active. '0' means port is Inactive
+volatile byte IO_status[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // remember the last I/O status. '1' means port is Active. '0' means port is Inactive
 
 // 3 bytes defining a pin behavior and software address of the hardware ports ( http://wiki.rocrail.net/doku.php?id=loconet-io-en )
 struct PIN_CFG
@@ -143,10 +143,10 @@ struct SV_TABLE
 };
 
 union SV_DATA                            // Union to access the data with the struct or by index
- {
-   SV_TABLE svt;
-   uint8_t data[51];
- };
+{
+  SV_TABLE svt;
+  uint8_t data[51];
+};
 SV_DATA svtable;                         // Union declaration svtable
 
 // Timers for each input in case of using "block" configuration instead of "input" configuration
@@ -163,31 +163,31 @@ MFRC522::MIFARE_Key key;
 // ********************************** util methods ***************************************
 
 /*********************************************************************************
- *  void LocoNet_communication()
- *  Turn LocoLED on  when LocoNet communication starts
- *  Turn LocoLED off when the waiting time has elapsed
+    void LocoNet_communication()
+    Turn LocoLED on  when LocoNet communication starts
+    Turn LocoLED off when the waiting time has elapsed
  *********************************************************************************/
- void LocoNet_communication(byte on_off)
- {
-    static unsigned long LED_on_off;
+void LocoNet_communication(byte on_off)
+{
+  static unsigned long LED_on_off;
 
-    if (on_off == 1)                        // LocoLED is off
-    {
-      digitalWrite (LocoLED, HIGH);         // LocoNet communication has started, switch on LocoLED
-      LED_on_off = millis();                // remember start time
-    }
+  if (on_off == 1)                        // LocoLED is off
+  {
+    digitalWrite (LocoLED, HIGH);         // LocoNet communication has started, switch on LocoLED
+    LED_on_off = millis();                // remember start time
+  }
 
-    if ((LED_on_off + LocoLED_wait) < millis())     // if the wait time has expired,
-    {
-      LED_on_off = 0;
-      digitalWrite (LocoLED, LOW);                  // switch off LocoLED
-    }
- }
+  if ((LED_on_off + LocoLED_wait) < millis())     // if the wait time has expired,
+  {
+    LED_on_off = 0;
+    digitalWrite (LocoLED, LOW);                  // switch off LocoLED
+  }
+}
 
 /*********************************************************************************
- *  void CalculateAddress ()
- *  This function calculates the software adresses and stores them in global variable softwareAddress[16]
- *  Compare to GCA50a myAddress[],renamed to softwareAddress[] since v1.07 2025
+    void CalculateAddress ()
+    This function calculates the software adresses and stores them in global variable softwareAddress[16]
+    Compare to GCA50a myAddress[],renamed to softwareAddress[] since v1.07 2025
  *********************************************************************************/
 void CalculateAddress()
 {
@@ -214,8 +214,8 @@ void CalculateAddress()
   {
     // inputs
     if ((svtable.svt.pincfg[n].cnfg == 27) || (svtable.svt.pincfg[n].cnfg == 31) || (svtable.svt.pincfg[n].cnfg == 47) || (svtable.svt.pincfg[n].cnfg == 15))
-    // TODO make a INPUT_DICT, apply in other places too
-    // declared as input, active low 27=block detector=default, 31=bd delayed, 47=push button
+      // TODO make a INPUT_DICT, apply in other places too
+      // declared as input, active low 27=block detector=default, 31=bd delayed, 47=push button
     {
       if (bitRead (svtable.svt.pincfg[n].value2, 5)) odd_even = 2; // bitread for bit 5 in SV5, SV8, SV11, SV14 etc.
       else odd_even = 1;
@@ -229,8 +229,8 @@ void CalculateAddress()
       }
     }
     else if ((svtable.svt.pincfg[n].cnfg == 128) || (svtable.svt.pincfg[n].cnfg == 129) || (svtable.svt.pincfg[n].cnfg == 145))
-    // outputs
-    // TODO make an OUTPUT_DICT, apply in other places too
+      // outputs
+      // TODO make an OUTPUT_DICT, apply in other places too
     {
       softwareAddress[n] = (((svtable.svt.pincfg[n].value2 & 0x0F) << 8 ) + (svtable.svt.pincfg[n].value1) + 1); // Calculated software address of the port. Eg. for Port 1 .value1 == SV4 and .value2 == SV5
       if (n > 7) {
@@ -257,33 +257,37 @@ void InitialiseInterrupt()
   cli();                    // turn off interrupts while messing with their settings
   PCICR = 0x02;             // PCIE1 interrupt is enabled for pin group A0 .. A7
 
-  for (n=8;n<14;n++)        // only inputs should give an interupt. Select A0..A5
+  for (n = 8; n < 14; n++)  // only inputs should give an interupt. Select A0..A5
   {
-    if (bitRead(svtable.svt.pincfg[n].cnfg,7) == 0)       // I/O port is an input TODO also handle button, toggle
-        bitWrite (PCMSK1, n-8, 1);                        // interrupts on pins A0 .. A5
+    if (bitRead(svtable.svt.pincfg[n].cnfg, 7) == 0)      // I/O port is an input TODO also handle button, toggle
+      bitWrite (PCMSK1, n - 8, 1);                      // interrupts on pins A0 .. A5
   }
 
-  if (bitRead(svtable.svt.pincfg[14].cnfg,7) == 0) bitWrite (EIMSK, 0,1);    // if D2 is an input ==> enable INT0
-  if (bitRead(svtable.svt.pincfg[15].cnfg,7) == 0) bitWrite (EIMSK, 1,1);    // if D3 is an input ==> enable INT1
+  if (bitRead(svtable.svt.pincfg[14].cnfg, 7) == 0) bitWrite (EIMSK, 0, 1);  // if D2 is an input ==> enable INT0
+  if (bitRead(svtable.svt.pincfg[15].cnfg, 7) == 0) bitWrite (EIMSK, 1, 1);  // if D3 is an input ==> enable INT1
 
   EICRA  = 0b00001010;      // D2 INT0 on falling Edge.    D3 INT1 on falling Edge.
   sei();                    // turn interrupts back on
 }
 
 ISR(INT0_vect)              // ISR(INT0_vect) only reacts on a descending edge at the input
-{ IO_status[6] = 1; }       //Serial.println("D2");}
+{
+  IO_status[6] = 1;
+}       //Serial.println("D2");}
 
 ISR(INT1_vect)              // ISR(INT1_vect) only reacts on a descending edge at the input
-{ IO_status[7] = 1; }       //Serial.println("D3");}
+{
+  IO_status[7] = 1;
+}       //Serial.println("D3");}
 
 ISR(PCINT1_vect)            // Interrupt service routine. Every single PCINT8..14 (=ADC0..5) change will generate an interrupt: but this will always be the same interrupt routine
 {
-  if (digitalRead(A0)==0)  IO_status[0] = 1;    //Serial.println("A0");
-  if (digitalRead(A1)==0)  IO_status[1] = 1;    //Serial.println("A1");
-  if (digitalRead(A2)==0)  IO_status[2] = 1;    //Serial.println("A2");
-  if (digitalRead(A3)==0)  IO_status[3] = 1;    //Serial.println("A3");
-  if (digitalRead(A4)==0)  IO_status[4] = 1;    //Serial.println("A4");
-  if (digitalRead(A5)==0)  IO_status[5] = 1;    //Serial.println("A5");
+  if (digitalRead(A0) == 0)  IO_status[0] = 1;  //Serial.println("A0");
+  if (digitalRead(A1) == 0)  IO_status[1] = 1;  //Serial.println("A1");
+  if (digitalRead(A2) == 0)  IO_status[2] = 1;  //Serial.println("A2");
+  if (digitalRead(A3) == 0)  IO_status[3] = 1;  //Serial.println("A3");
+  if (digitalRead(A4) == 0)  IO_status[4] = 1;  //Serial.println("A4");
+  if (digitalRead(A5) == 0)  IO_status[5] = 1;  //Serial.println("A5");
 }
 
 // *************** SETUP *************************
@@ -302,7 +306,10 @@ void setup()
   // Configure the serial port
 #ifdef DEBUG
   Serial.begin(9600); // Initialize serial communications with the PC (old bootloader baud or monitor garbage after flashing; on a new Nano use 115200 bd)
-  Serial.print("GCA51 v.");Serial.println(VERSION);
+  Serial.print("GCA51 v."); Serial.println(VERSION);
+#ifdef JMRI4
+  Serial.println("Firmware set up to send JMRI 4.22-5.12 compatible LISSY IR messages (only 2 RFID tag bytes used).");
+#endif
   uiStartTimer = millis();
   do { // wait for the serial interface, max 1 second.
     uiElapsedDelay = millis() - uiStartTimer;
@@ -319,7 +326,7 @@ void setup()
   sv.init(MANUF_ID, BOARD_TYPE, 1, 1); // to see if needed just once (saved in EEPROM)
 
   // Check for a valid config
-  if (svtable.svt.vrsion!=VERSION || svtable.svt.addr_low<1 || svtable.svt.addr_low>240 || svtable.svt.addr_high<1 || svtable.svt.addr_high>100 )
+  if (svtable.svt.vrsion != VERSION || svtable.svt.addr_low < 1 || svtable.svt.addr_low > 240 || svtable.svt.addr_high < 1 || svtable.svt.addr_high > 100 )
   {
     svtable.svt.vrsion = VERSION;
     svtable.svt.addr_low = ucBoardAddrLo;
@@ -334,25 +341,25 @@ void setup()
     svtable.data[n] = EEPROM.read(n); // Read the values of SV0 till SV51. The values in EEPROM were OK or standardised in start_setup()
   }
   CalculateAddress();                 // Calculate software adresses and store in global variable softwareAddress[16]
-  Serial.print("Module ");Serial.print(svtable.svt.addr_low);Serial.print("/");Serial.println(svtable.svt.addr_high);
+  Serial.print("Module "); Serial.print(svtable.svt.addr_low); Serial.print("/"); Serial.println(svtable.svt.addr_high);
 
   // Configure I/O pins and give the outputs a start value
 #ifdef DEBUG
   Serial.println("Initializing pins...");
 #endif
-  for (n=8; n<16; n++)                // The first 8 I/O ports are already set and are not available to users, except the adresses of port 1 and 2 (RFID sensor ports)
-                                      // The actual hardware Nano pin numbers are declared in the global variabele pinMap[]
+  for (n = 8; n < 16; n++)            // The first 8 I/O ports are already set and are not available to users, except the adresses of port 1 and 2 (RFID sensor ports)
+    // The actual hardware Nano pin numbers are declared in the global variabele pinMap[]
   {
-    if (bitRead(svtable.svt.pincfg[n].cnfg,7))                                          // if bit 7 of the cnfg byte is '1', the pin is an output
-    {                                                                                   // if bit 7 of the cnfg byte is '0', the pin is an input
-      pinMode(pinMap[n-8],OUTPUT);
-      if (bitRead(svtable.svt.pincfg[n].cnfg,0))  digitalWrite(pinMap[n-8], HIGH);      // if bit 0 van cnfg == 1 then the output is high at startup
-      else  digitalWrite(pinMap[n-8], LOW);                                             // else the output is low at startup
+    if (bitRead(svtable.svt.pincfg[n].cnfg, 7))                                         // if bit 7 of the cnfg byte is '1', the pin is an output
+    { // if bit 7 of the cnfg byte is '0', the pin is an input
+      pinMode(pinMap[n - 8], OUTPUT);
+      if (bitRead(svtable.svt.pincfg[n].cnfg, 0))  digitalWrite(pinMap[n - 8], HIGH);   // if bit 0 van cnfg == 1 then the output is high at startup
+      else  digitalWrite(pinMap[n - 8], LOW);                                           // else the output is low at startup
     }
     else
     {
-      pinMode(pinMap[n-8],INPUT_PULLUP);
-      bitWrite(svtable.svt.pincfg[n].value2,4,1);    // block detector, no pulse contact
+      pinMode(pinMap[n - 8], INPUT_PULLUP);
+      bitWrite(svtable.svt.pincfg[n].value2, 4, 1);  // block detector, no pulse contact
     }
     InitialiseInterrupt();                           // (only) the inputs get an interrupt
   }
@@ -366,9 +373,9 @@ void setup()
 #endif
 
   /*
-   * Only initialisation; all readers should be initialised before
-   * any communication
-   */
+     Only initialisation; all readers should be initialised before
+     any communication
+  */
   for (uint8_t i = 0; i < NR_OF_RFID_PORTS; i++) {
     mfrc522[i].PCD_Init(mfrc522Cs[i], RST_PIN);
   }
@@ -379,10 +386,10 @@ void setup()
 
     if (bSerialOk) {
       Serial.print(F("Reader "));
-      Serial.print(i+1);
+      Serial.print(i + 1);
     }
 
-    if ((readReg == 0x00) || (readReg == 0xFF)){ // reader missing
+    if ((readReg == 0x00) || (readReg == 0xFF)) { // reader missing
       if (bSerialOk) {
         Serial.println(F(" absent"));
       }
@@ -392,8 +399,8 @@ void setup()
         Serial.println(readReg, HEX);
       }
       if (0 == uiActReaders) { // save the index of the first active reader
-         uiFirstReaderIdx = i;
-         uiRfidPort = uiFirstReaderIdx; // initialize the starting reader counter
+        uiFirstReaderIdx = i;
+        uiRfidPort = uiFirstReaderIdx; // initialize the starting reader counter
       }
       uiActReaders++;
       //calcSenAddr(i); // stores rfid reader address (not the port) in ucAddrHiSen[i] and ucAddrLoSen[i] <<<<<<<<<<<<<< wrong arrays, replaced for GCA51
@@ -402,10 +409,10 @@ void setup()
       pinMode(mfrc522Irq[i], INPUT_PULLUP);
 
       /*
-       *  Allow the ... irq to be propagated to the IRQ pin
-       *  For test purposes propagate the IdleIrq and loAlert
-       */
-      mfrc522[i].PCD_WriteRegister(mfrc522[i].ComIEnReg,regVal);
+          Allow the ... irq to be propagated to the IRQ pin
+          For test purposes propagate the IdleIrq and loAlert
+      */
+      mfrc522[i].PCD_WriteRegister(mfrc522[i].ComIEnReg, regVal);
 
       delay(10);
       attachInterrupt(digitalPinToInterrupt(mfrc522Irq[i]), readCard[i](), FALLING);
@@ -436,20 +443,20 @@ void loop()   // *************** MAIN LOOP () *************************
   LocoNet_communication(0);                            // switch off LocoLED when the wait time has expired
 
   /***************************** LocoNet Messages ********************************
-   * Address programming over LocoNet
-   * compare to GCA50a
-   */
+     Address programming over LocoNet
+     compare to GCA50a
+  */
 
   LnPacket = LocoNet.receive();                        // Check for any received LocoNet packets
   if (LnPacket)
   {
-    #ifdef DEBUG
-      if (bSerialOk) {
-         Serial.print(F("Received LN mess. "));
-         dump_byte_array(LnPacket->data, LnPacket->data[1]);
-         Serial.println();
-      }
-    #endif
+#ifdef DEBUG
+    if (bSerialOk) {
+      Serial.print(F("Received LN mess. "));
+      dump_byte_array(LnPacket->data, LnPacket->data[1]);
+      Serial.println();
+    }
+#endif
 
     if (!LocoNet.processSwitchSensorMessage(LnPacket)) // check for PEER packet if this packet was not a Switch or Sensor Message
     {
@@ -459,40 +466,40 @@ void loop()   // *************** MAIN LOOP () *************************
 
   /********************************** OUTPUTS *******************************************
 
-  handled by call-back function notifySwitchRequest to LocoNet.processSwitchSensorMessage
+    handled by call-back function notifySwitchRequest to LocoNet.processSwitchSensorMessage
 
   ******************************* HANDLE INPUTS *****************************************/
-  for (n=8; n<16; n++)                                                                              // Check I/O ports 8 till 15. I/O ports 0 till 7 are used for the communication with the RFID equipment
+  for (n = 8; n < 16; n++)                                                                          // Check I/O ports 8 till 15. I/O ports 0 till 7 are used for the communication with the RFID equipment
   {
-    if ((IO_timing[n-8] == 0) && (bitRead(svtable.svt.pincfg[n].cnfg,7)) == 0)                      // there is no WaitTime active && the port is an input port
+    if ((IO_timing[n - 8] == 0) && (bitRead(svtable.svt.pincfg[n].cnfg, 7)) == 0)                   // there is no WaitTime active && the port is an input port
     {
-      if (IO_status[n-8] == 1)                                                                      // IO_status contains the last known value. At the ISR's this array is filled with new input information
-        {
-          IO_timing[n-8] = millis();                                                                // input is active, then start timer
-          LocoNet_communication(1);                                                                 // switch on LocoLED
-          bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n-8]);                                // Give .value2 the status of input [n] because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
-          LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[n].value1, svtable.svt.pincfg[n].value2);  // Send the input [n] change to LocoNet
-          #ifdef DEBUG
-            if (bSerialOk) {
-               Serial.println(F("Sent out input as LN mess. "));
-            }
-        #endif
+      if (IO_status[n - 8] == 1)                                                                    // IO_status contains the last known value. At the ISR's this array is filled with new input information
+      {
+        IO_timing[n - 8] = millis();                                                              // input is active, then start timer
+        LocoNet_communication(1);                                                                 // switch on LocoLED
+        bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n - 8]);                              // Give .value2 the status of input [n] because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
+        LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[n].value1, svtable.svt.pincfg[n].value2);  // Send the input [n] change to LocoNet
+#ifdef DEBUG
+        if (bSerialOk) {
+          Serial.println(F("Sent out input as LN mess. "));
         }
+#endif
+      }
     }
 
-    if ((IO_timing[n-8] > 0) && ((millis() - IO_timing[n-8]) > WaitTime))                             // Did we wait longer then the WaitTime?
+    if ((IO_timing[n - 8] > 0) && ((millis() - IO_timing[n - 8]) > WaitTime))                         // Did we wait longer then the WaitTime?
     {
-      IO_timing[n-8] = 0;                                                                             // reset WaitTime
-      IO_status[n-8] = 0;                                                                             // make input (hall-sensor) inactive after WaitTime
+      IO_timing[n - 8] = 0;                                                                           // reset WaitTime
+      IO_status[n - 8] = 0;                                                                           // make input (hall-sensor) inactive after WaitTime
       LocoNet_communication(1);                                                                       // LocoNet communication, switch on LocoLED
-      bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n-8]);                                      // Give .value2 the status of input [n] because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
+      bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n - 8]);                                    // Give .value2 the status of input [n] because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
       LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[n].value1, svtable.svt.pincfg[n].value2);        // Send the input [n] change to LocoNet
     }
   }
 
   /********************************** HANDLE RFID ***************************************/
 
-  unsigned char i=0, j=0;
+  unsigned char i = 0, j = 0;
 
   //    SendPacketSensor[i].data[0]    =  0xE4; //OPC - variable length message
   //    SendPacketSensor[i].data[1]    =  Length of the message,  14 bytes
@@ -505,108 +512,100 @@ void loop()   // *************** MAIN LOOP () *************************
 
 
   /*****************************************
-  / Check the RFID readers
+    / Check the RFID readers
   *****************************************/
 
   // v151 adds flexible loop from rfid2ln, renamedaced uiAddrSenFull[i] to softwareAddress[i]
   if (uiActReaders > 0) {
     if (uiBufCnt < LN_BUFF_LEN) { // if buffer not full
-    #if USE_INTERRUPT
+#if USE_INTERRUPT
       if (bNewInt[uiRfidPort]) {
         bNewInt[uiRfidPort] = false;
-    #else
+#else
       if (mfrc522[uiRfidPort].PICC_IsNewCardPresent()) {
-    #endif
+#endif
 
         if (mfrc522[uiRfidPort].PICC_ReadCardSerial()) // if tag data
         {
           if (uiNrEmptyReads[uiRfidPort] > 2) { // send a uid only once
             //if (! compareUid( mfrc522[uiRfidPort].uid.uidByte, oldUid[uiRfidPort], mfrc522[uiRfidPort].uid.size)) // if the card-ID differs from the previous card-ID - original GCA51
             //{
-              // set sensor Active/LOW (see rfid2ln)
-              bitWrite(svtable.svt.pincfg[uiRfidPort].value2, 4, 0x0); // Give .value2 the status of input [n] because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
-              LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[uiRfidPort].value1, svtable.svt.pincfg[uiRfidPort].value2); // Send the state change to LocoNet
+            // set sensor Active/LOW (see rfid2ln)
+            bitWrite(svtable.svt.pincfg[uiRfidPort].value2, 4, 0x0); // Give .value2 the status of input [n] because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
+            LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[uiRfidPort].value1, svtable.svt.pincfg[uiRfidPort].value2); // Send the state change to LocoNet
+            Serial.println();
+            Serial.print(F("Sending sensor state ACTIVE. Address: ")); Serial.println(softwareAddress[uiRfidPort], DEC);
+            bSensorActive[uiRfidPort] = true;
+
+            if (bSerialOk) { // Show some details of the PICC (that is: the tag/card)
+              Serial.print(F("Port: "));
+              Serial.print(uiRfidPort);
+              Serial.print(F(" Card UID:"));
+              dump_byte_array(mfrc522[uiRfidPort].uid.uidByte, mfrc522[uiRfidPort].uid.size);
               Serial.println();
-              Serial.print(F("Sending sensor state ACTIVE. Address: ")); Serial.println(softwareAddress[uiRfidPort], DEC);
-              bSensorActive[uiRfidPort] = true;
+            }
 
-              if (bSerialOk) { // Show some details of the PICC (that is: the tag/card)
-                Serial.print(F("Port: "));
-                Serial.print(uiRfidPort);
-                Serial.print(F(" Card UID:"));
-                dump_byte_array(mfrc522[uiRfidPort].uid.uidByte, mfrc522[uiRfidPort].uid.size);
-                Serial.println();
-              }
-
-              // GCA51 v150 code updated for latest rfid2ln,
-              setMessageHeader(uiBufWrIdx, uiRfidPort); // fills SendPacketSensor[i].data[0] till .data[4] with data. Address used is the port software address of uiRfidPort.
+            // GCA51 v150 code updated for latest rfid2ln,
+            setMessageHeader(uiBufWrIdx, uiRfidPort); // fills SendPacketSensor[i].data[0] till .data[4] with data. Address used is the port software address of uiRfidPort.
 
 #ifdef JMRI4
 
-              SendPacketSensor[uiBufWrIdx].data[7] = 0;                                                       // clear the byte for the MS bits of the data bytes
-              for (i=0, j=3; i< 4; i++, j++)                                                                  // Fill SendPacketSensor.data[5-6] with 2 data bytes information from the RFID card
-              {
-                 if (mfrc522[uiRfidPort].uid.size > i)
-                 {
-                    SendPacketSensor[uiBufWrIdx].data[j] = mfrc522[uiRfidPort].uid.uidByte[i] & 0x7F;         // LocoNet bytes have only 7 bits;
-                                                                                                              // MSbit is transmitted in the SendPacket.data[10] = LnMessage[12])
-                    if (mfrc522[uiRfidPort].uid.uidByte[i] & 0x80)                                            // if there is an MSB-bit in the data-byte
-                    {
-                       SendPacketSensor[uiBufWrIdx].data[6] |= 1 << i;                                        // bring this MSB-bit to the last databyte [6], together with the other MSB-bits
-                    }
-                 } else {
-                    SendPacketSensor[uiBufWrIdx].data[j] = 0;
-                 }
-              } // for (uint8_t i=4, j=3
-
-              SendPacketSensor[uiBufWrIdx].data[7] = 0xFF;                                                   // Reset the checksum data byte
-              for (j=0; j<7; j++)
-              {
-                SendPacketSensor[uiBufWrIdx].data[7] ^= SendPacketSensor[uiBufWrIdx].data[j];                // calculate the checksum for header + data of the RFID-7 message
-              }
-
+            SendPacketSensor[uiBufWrIdx].data[7] = 0;                                                    // clear the byte for the MS bits of the data bytes
+            // Fill SendPacketSensor.data[5-6] with 2 data bytes from the RFID card UID (becomes the Id Tag in JMRI).
+            // Note: works as hi and lo bytes so must flip. Only 7 bits per LocoNet byte
+            if (mfrc522[uiRfidPort].uid.size > 1)
+            {
+              SendPacketSensor[uiBufWrIdx].data[5] = mfrc522[uiRfidPort].uid.uidByte[1] & 0x7F;          // lowAddress. LocoNet bytes have only 7 bits;
+              SendPacketSensor[uiBufWrIdx].data[6] = mfrc522[uiRfidPort].uid.uidByte[2] & 0x7F;          // highAddress. LocoNet bytes have only 7 bits;
+            }
+            // no room for MSB but onlu make unique
+            SendPacketSensor[uiBufWrIdx].data[7] = 0xFF;                                                 // Reset the checksum data byte
+            for (j = 0; j < 7; j++)
+            {
+              SendPacketSensor[uiBufWrIdx].data[7] ^= SendPacketSensor[uiBufWrIdx].data[j];              // calculate the checksum for header + data of the RFID-7 message
+            }
 
 #else
-              SendPacketSensor[uiBufWrIdx].data[12] = 0;                                                      // clear the byte for the MS bits of the data bytes
-              for (i=0, j=5; i< UID_LEN; i++, j++)                                                            // Fill SendPacketSensor.data[5-12] with 7 data bytes information from the RFID card
+            SendPacketSensor[uiBufWrIdx].data[12] = 0;                                                    // clear the byte for the MS bits of the data bytes
+            for (i = 0, j = 5; i < UID_LEN; i++, j++)                                                     // Fill SendPacketSensor.data[5-12] with 7 data bytes information from the RFID card
+            {
+              if (mfrc522[uiRfidPort].uid.size > i)
               {
-                 if (mfrc522[uiRfidPort].uid.size > i)
-                 {
-                    SendPacketSensor[uiBufWrIdx].data[j] = mfrc522[uiRfidPort].uid.uidByte[i] & 0x7F;         // LocoNet bytes have only 7 bits;
-                                                                                                              // MSbit is transmitted in the SendPacket.data[10] = LnMessage[12])
-                    if (mfrc522[uiRfidPort].uid.uidByte[i] & 0x80)                                            // if there is an MSB-bit in the data-byte
-                    {
-                       SendPacketSensor[uiBufWrIdx].data[12] |= 1 << i;                                       // bring this MSB-bit to the last databyte [12], together with the other MSB-bits
-                    }
-                 } else {
-                    SendPacketSensor[uiBufWrIdx].data[j] = 0;
-                 }
-              } // for (uint8_t i=0, j=5
-
-              SendPacketSensor[uiBufWrIdx].data[13] = 0xFF;                                                   // Reset the checksum data byte
-              for (j=0; j<13; j++)
-              {
-                SendPacketSensor[uiBufWrIdx].data[13] ^= SendPacketSensor[uiBufWrIdx].data[j];                // calculate the checksum for header + data of the RFID-7 message
-              }
-#endif
-            #ifdef DEBUG
-              if (bSerialOk) {
-                 Serial.print(uiRfidPort); Serial.print(F(" built LN mess.: "));
-                 dump_byte_array(SendPacketSensor[uiBufWrIdx].data, uiLnSendLength);
-                 Serial.println();
-              }
-            #endif
-
-              // LnSend was here in v150 >
-
-              if (uiBufWrIdx < LN_BUFF_LEN) {
-                uiBufWrIdx++;
+                SendPacketSensor[uiBufWrIdx].data[j] = mfrc522[uiRfidPort].uid.uidByte[i] & 0x7F;         // LocoNet bytes have only 7 bits;
+                // MSbit is transmitted in the SendPacket.data[10] = LnMessage[12])
+                if (mfrc522[uiRfidPort].uid.uidByte[i] & 0x80)                                            // if there is an MSB-bit in the data-byte
+                {
+                  SendPacketSensor[uiBufWrIdx].data[12] |= 1 << i;                                        // bring this MSB-bit to the last databyte [12], together with the other MSB-bits
+                }
               } else {
-                uiBufWrIdx = 0;
+                SendPacketSensor[uiBufWrIdx].data[j] = 0;
               }
-              uiBufCnt++;
+            } // for (uint8_t i=0, j=5
 
-              Serial.print("uiBufWrIdx: "); Serial.print(uiBufWrIdx); Serial.print(" uiBufCnt up: "); Serial.println(uiBufCnt);
+            SendPacketSensor[uiBufWrIdx].data[13] = 0xFF;                                                   // Reset the checksum data byte
+            for (j = 0; j < 13; j++)
+            {
+              SendPacketSensor[uiBufWrIdx].data[13] ^= SendPacketSensor[uiBufWrIdx].data[j];                // calculate the checksum for header + data of the RFID-7 message
+            }
+#endif
+#ifdef DEBUG
+            if (bSerialOk) {
+              Serial.print(uiRfidPort); Serial.print(F(" built LN mess.: "));
+              dump_byte_array(SendPacketSensor[uiBufWrIdx].data, uiLnSendLength);
+              Serial.println();
+            }
+#endif
+
+            // LnSend was here in v150 >
+
+            if (uiBufWrIdx < LN_BUFF_LEN) {
+              uiBufWrIdx++;
+            } else {
+              uiBufWrIdx = 0;
+            }
+            uiBufCnt++;
+
+            // Serial.print("uiBufWrIdx: "); Serial.print(uiBufWrIdx); Serial.print(" uiBufCnt up: "); Serial.println(uiBufCnt);
 
             //} // if(!compareUid( mfrc522[uiRfidPort] - from v150 code
 
@@ -626,15 +625,14 @@ void loop()   // *************** MAIN LOOP () *************************
         {
           if (bSensorActive[uiRfidPort])
           {
-            #ifdef DEBUG
-              if (bSerialOk) {
-              Serial.println(F("Send sensor reset..."));
-              }
-            #endif
+#ifdef DEBUG
+            if (bSerialOk) {
+              Serial.print(F("Sending sensor state INACTIVE. Address: ")); Serial.println(softwareAddress[uiRfidPort], DEC); Serial.println(); // spacer
+            }
+#endif
             // set sensor Inactive/HIGH (see rfid2ln)
             bitWrite(svtable.svt.pincfg[uiRfidPort].value2, 4, 0x1); // Give .value2 the status of input [n] because the next LocoNet.send (OPC_INPUT_REP... function needs this information
             LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[uiRfidPort].value1, svtable.svt.pincfg[uiRfidPort].value2); // Send the state change to LocoNet
-            Serial.print(F("Sending sensor state INACTIVE. Address: ")); Serial.println(softwareAddress[uiRfidPort], DEC); Serial.println("-"); Serial.println(); // spacer
           }
 
         } //if(uiNrEmptyReads
@@ -659,7 +657,6 @@ void loop()   // *************** MAIN LOOP () *************************
       }
 
       uiRfidPort++;
-      if (uiRfidPort > 2) {Serial.print("WARNING uiRfidPort>2!!!!!!!!!!!!!!!!!!!!!!");Serial.println(uiRfidPort);}
       if (uiRfidPort == uiActReaders + uiFirstReaderIdx) { // loop over only connected readers
         uiRfidPort = uiFirstReaderIdx;
       }
@@ -670,50 +667,39 @@ void loop()   // *************** MAIN LOOP () *************************
   } // end of if(uiActReaders>0 RFID
 
   /******************** SEND **************************
-   * Send the tag data on the LocoNet bus
-   * total message size is 14 bytes, 7 RFID UID bytes
-   */
+     Send the tag data on the LocoNet bus
+     total message size is 14 bytes, 7 RFID UID bytes
+  */
   if (uiBufCnt > 0)
   {
-
-#ifdef DEBUG
-    if (bSerialOk) {
-      Serial.print(F( " LN send mess:"));
-      dump_byte_array(SendPacketSensor[uiBufRdIdx].data, uiLnSendLength);
-      Serial.println();
-    }
-#endif
-
     LocoNet_communication(1); // turn on onboard LocoLED - blink 1x + sensor change
     LN_STATUS lnSent = LocoNet.send( &SendPacketSensor[uiBufRdIdx], LN_BACKOFF_MAX - (ucBoardAddrLo % 10)); // trying to differentiate the ln answer time
     if (lnSent = LN_DONE) // message sent OK
     {
-    #ifdef DEBUG
+#ifdef DEBUG
       // from JMRI 5.12ish LnInterpret() GCA51 RFID-7 size = 12 bytes
       Serial.print(F("LN mess sent successfully for RFID tag uid (decoded to verify): "));
       // add rfid_hi byte
+
+      int start = 5;
+      int end = 12;
+#ifdef JMRI4
+      start = 5;
+      end = 7;
+#endif
+
       char hexCar[2];
-      int j, hi, start, end, rfidHi;
-
-      #ifdef JMRI4
-        rfidHi = SendPacketSensor[uiBufRdIdx].data[6]; // MSbits are transmitted via byte [6]
-        start = 4;
-        end = 6;
-      #else
-        rfidHi = SendPacketSensor[uiBufRdIdx].data[12]; // MSbits are transmitted via byte [12]
-        start = 5;
-        end = 12;
-      #endif
-
-      for (j=start; j<end; j++)                                // print the 7 RFID UID HEX bytes
+      int j, hi;
+      int rfidHi = SendPacketSensor[uiBufRdIdx].data[end]; // MSbits are transmitted via byte [12]
+      for (j = start; j < end; j++)                        // print the 7 RFID UID HEX bytes
       {
         hi = 0x0;
-        if ((rfidHi >> j)%2 == 1) hi = 0x80;
+        if ((rfidHi >> j) % 2 == 1) hi = 0x80;
         sprintf(hexCar, "%02X", SendPacketSensor[uiBufRdIdx].data[j] + hi); // 02X means: pad with leading 0's if required
         Serial.print(hexCar); Serial.print(" "); // space bytes
       }
       Serial.println();
-    #endif
+#endif
 
       if (uiBufRdIdx < LN_BUFF_LEN) {
         uiBufRdIdx++;
@@ -721,7 +707,7 @@ void loop()   // *************** MAIN LOOP () *************************
         uiBufRdIdx = 0;
       }
       uiBufCnt--;
-      Serial.print("uiBufRdIdx: "); Serial.print(uiBufRdIdx); Serial.print(" uiBufCnt down: "); Serial.println(uiBufCnt);
+      // Serial.print("uiBufRdIdx: "); Serial.print(uiBufRdIdx); Serial.print(" uiBufCnt down: "); Serial.println(uiBufCnt);
     } // if(lnSent = LN_DONE)
 
   } // if(uiBufCnt > 0
@@ -733,12 +719,12 @@ void loop()   // *************** MAIN LOOP () *************************
 /********************************** RFID methods ***************************************
 
 ***************************************************************************************************************************
- * Function : void setMessageHeader(uint8_t port, uint8_t index)
- * This function calculates the adrr.low and addr.high bytes, needed for the RFID-7 report to Rocrail or other systems.
- * The software address of the specific port is calculated from the CV's of this port (but we also store it in softwareAddress?!)
- *
- * rfIndex = index of rfid reader
- * pIndex = index of SendPacketSensor, 0 or 1 on GCA51
+   Function : void setMessageHeader(uint8_t port, uint8_t index)
+   This function calculates the adrr.low and addr.high bytes, needed for the RFID-7 report to Rocrail or other systems.
+   The software address of the specific port is calculated from the CV's of this port (but we also store it in softwareAddress?!)
+
+   rfIndex = index of rfid reader
+   pIndex = index of SendPacketSensor, 0 or 1 on GCA51
 ***************************************************************************************************************************/
 void setMessageHeader(uint8_t rfIndex, uint8_t pIndex)
 {
@@ -748,7 +734,7 @@ void setMessageHeader(uint8_t rfIndex, uint8_t pIndex)
   SendPacketSensor[rfIndex].data[0] = 0xE4; // OPC - variable length message OPC_LISSY_REP
   SendPacketSensor[rfIndex].data[1] = uiLnSendLength;
 
-  if(bitRead (svtable.svt.pincfg[pIndex].value2, 5)) odd_even = 2;                                             // bitread for bit 5 on SV5, SV8, SV11, SV14 etc.
+  if (bitRead (svtable.svt.pincfg[pIndex].value2, 5)) odd_even = 2;                                            // bitread for bit 5 on SV5, SV8, SV11, SV14 etc.
   else odd_even = 1;
 
   sensorAddr = (((svtable.svt.pincfg[pIndex].value2 & 0x0F) << 8 ) + (svtable.svt.pincfg[pIndex].value1 << 1 ) + odd_even); // Calculated software address of the port. For Port 1 .value1 == SV4 and .value2 == SV5
@@ -756,25 +742,28 @@ void setMessageHeader(uint8_t rfIndex, uint8_t pIndex)
 
   // sensorAddr is the complete sensor address.
   // Now we send this Address to LocoNet but we must split the port softwareAddress into a high part and a low part
-  uint8_t addrHi = sensorAddr >> 7;                                                               // addr.high
-  uint8_t addrLo = sensorAddr & 0x7F;                                                             // addr.low
+  uint8_t addrHi = sensorAddr >> 7;
+  uint8_t addrLo = sensorAddr & 0x7F;
 
+  //#ifdef DEBUG
+  //  Serial.print ("sensorAddr = "); Serial.println (sensorAddr);
+  //  Serial.print ("Addr_high  = "); Serial.println (sensorAddr >> 7);
+  //  Serial.print ("Addr_low   = "); Serial.println (sensorAddr & 0x7F);
+  //#endif
 
-#ifdef JMRI4
-  SendPacketSensor[rfIndex].data[2] = 0x00; // shorter LISSY IR report
-  SendPacketSensor[rfIndex].data[4] = addrHi;                                                             // addr.high for LISSY IR report to JMRI 4
-  SendPacketSensor[rfIndex].data[5] = addrLo;                                                             // addr.low  for LISSY IR report
+#ifdef JMRI4                                                                                              // LISSY IR report to JMRI 4.22-5.21
+  SendPacketSensor[rfIndex].data[2] = 0x00; // short LISSY IR report                                      // category 1 (valid: 0x0 - 0x3)
+  SendPacketSensor[rfIndex].data[3] = 0x40;                                                               // report type Loco seen. Direction North, South += 0x20
+  SendPacketSensor[rfIndex].data[4] = addrLo;                                                             // only 1 address byte for reader/sensor, so max. 0x7F = LR126
+  if (addrHi != 0x0) {
+    Serial.print ("RFID sensorAddr. "); Serial.print (sensorAddr); Serial.print (" reduced to low byte only: "); Serial.println (addrLo);
+  }
 # else
   SendPacketSensor[rfIndex].data[2] = 0x41; // report type unique to RFID-5/7
   SendPacketSensor[rfIndex].data[3] = addrHi;                                                             // addr.high for RFID-7 report to Rocrail or JMRI 5.12+
   SendPacketSensor[rfIndex].data[4] = addrLo;                                                             // addr.low  for RFID-7 report
 #endif
 
-#ifdef DEBUG
-  Serial.print ("sensorAddr = "); Serial.println (sensorAddr);
-  Serial.print ("Addr_high  = "); Serial.println (sensorAddr >> 7);
-  Serial.print ("Addr_low   = "); Serial.println (sensorAddr & 0x7F);
-#endif
 }
 
 /********************************** LocoIO methods ***************************************/
@@ -784,70 +773,70 @@ void setMessageHeader(uint8_t rfIndex, uint8_t pIndex)
 boolean processPeerPacket()
 {
   // Check is a OPC_PEER_XFER message
-  if (LnPacket->px.command != OPC_PEER_XFER) return(false);
+  if (LnPacket->px.command != OPC_PEER_XFER) return (false);
 
   //Check is my destination
-  if ((LnPacket->px.dst_l!=0 || LnPacket->px.d5!=0) &&
-      (LnPacket->px.dst_l!=0x7f || LnPacket->px.d5!=svtable.svt.addr_high) &&
-      (LnPacket->px.dst_l!=svtable.svt.addr_low || LnPacket->px.d5!=svtable.svt.addr_high))
+  if ((LnPacket->px.dst_l != 0 || LnPacket->px.d5 != 0) &&
+      (LnPacket->px.dst_l != 0x7f || LnPacket->px.d5 != svtable.svt.addr_high) &&
+      (LnPacket->px.dst_l != svtable.svt.addr_low || LnPacket->px.d5 != svtable.svt.addr_high))
   {
-    #ifdef DEBUG
+#ifdef DEBUG
     Serial.println("OPC_PEER_XFER not for me!");
-    Serial.print("LnPacket->px.dst_l: ");Serial.print(LnPacket->px.dst_l);Serial.print(" Addr low: ");Serial.println(svtable.svt.addr_low);
-    Serial.print("LnPacket->px.d5: ");Serial.print(LnPacket->px.d5);Serial.print(" Addr high: ");Serial.println(svtable.svt.addr_high);
-    Serial.print("LnPacket->px.dst_h: ");Serial.print(LnPacket->px.dst_h);Serial.print(" Addr high: ");Serial.println(svtable.svt.addr_high);
-    Serial.print("LnPacket->px.d1: ");Serial.println(LnPacket->px.d1);
-    Serial.print("LnPacket->px.d2: ");Serial.println(LnPacket->px.d2);
-    #endif
-    return(false);
+    Serial.print("LnPacket->px.dst_l: "); Serial.print(LnPacket->px.dst_l); Serial.print(" Addr low: "); Serial.println(svtable.svt.addr_low);
+    Serial.print("LnPacket->px.d5: "); Serial.print(LnPacket->px.d5); Serial.print(" Addr high: "); Serial.println(svtable.svt.addr_high);
+    Serial.print("LnPacket->px.dst_h: "); Serial.print(LnPacket->px.dst_h); Serial.print(" Addr high: "); Serial.println(svtable.svt.addr_high);
+    Serial.print("LnPacket->px.d1: "); Serial.println(LnPacket->px.d1);
+    Serial.print("LnPacket->px.d2: "); Serial.println(LnPacket->px.d2);
+#endif
+    return (false);
   }
 
   //Set high bits in correct position
-  bitWrite(LnPacket->px.d1,7,bitRead(LnPacket->px.pxct1,0));
-  bitWrite(LnPacket->px.d2,7,bitRead(LnPacket->px.pxct1,1));
-  bitWrite(LnPacket->px.d3,7,bitRead(LnPacket->px.pxct1,2));
-  bitWrite(LnPacket->px.d4,7,bitRead(LnPacket->px.pxct1,3));
+  bitWrite(LnPacket->px.d1, 7, bitRead(LnPacket->px.pxct1, 0));
+  bitWrite(LnPacket->px.d2, 7, bitRead(LnPacket->px.pxct1, 1));
+  bitWrite(LnPacket->px.d3, 7, bitRead(LnPacket->px.pxct1, 2));
+  bitWrite(LnPacket->px.d4, 7, bitRead(LnPacket->px.pxct1, 3));
 
-  bitWrite(LnPacket->px.d5,7,bitRead(LnPacket->px.pxct2,0));
-  bitWrite(LnPacket->px.d6,7,bitRead(LnPacket->px.pxct2,1));
-  bitWrite(LnPacket->px.d7,7,bitRead(LnPacket->px.pxct2,2));
-  bitWrite(LnPacket->px.d8,7,bitRead(LnPacket->px.pxct2,3));
+  bitWrite(LnPacket->px.d5, 7, bitRead(LnPacket->px.pxct2, 0));
+  bitWrite(LnPacket->px.d6, 7, bitRead(LnPacket->px.pxct2, 1));
+  bitWrite(LnPacket->px.d7, 7, bitRead(LnPacket->px.pxct2, 2));
+  bitWrite(LnPacket->px.d8, 7, bitRead(LnPacket->px.pxct2, 3));
 
   //OPC_PEER_XFER D1 -> Command (1 =SV write, 2 = SV read)
   //OPC_PEER_XFER D2 -> Register to read or write
-  if (LnPacket->px.d1==2)
+  if (LnPacket->px.d1 == 2)
   {
-    #ifdef DEBUG
-      Serial.print("READ ");Serial.print(LnPacket->px.d2);Serial.print(" ");Serial.print(LnPacket->px.d2+1);Serial.print(" ");Serial.println(LnPacket->px.d2+2);
-    #endif
-    sendPeerPacket(svtable.data[LnPacket->px.d2], svtable.data[LnPacket->px.d2+1], svtable.data[LnPacket->px.d2+2]);
+#ifdef DEBUG
+    Serial.print("READ "); Serial.print(LnPacket->px.d2); Serial.print(" "); Serial.print(LnPacket->px.d2 + 1); Serial.print(" "); Serial.println(LnPacket->px.d2 + 2);
+#endif
+    sendPeerPacket(svtable.data[LnPacket->px.d2], svtable.data[LnPacket->px.d2 + 1], svtable.data[LnPacket->px.d2 + 2]);
     return (true);
   }
 
   // Write command
-  if (LnPacket->px.d1==1)
+  if (LnPacket->px.d1 == 1)
   {
 
-    if (LnPacket->px.d2>0) // SV 0 contains the program version - TODO fix to SV100
+    if (LnPacket->px.d2 > 0) // SV 0 contains the program version - TODO fix to SV100
     {
       //Store data
-      svtable.data[LnPacket->px.d2]=LnPacket->px.d4;
-      EEPROM.write(LnPacket->px.d2,LnPacket->px.d4);
+      svtable.data[LnPacket->px.d2] = LnPacket->px.d4;
+      EEPROM.write(LnPacket->px.d2, LnPacket->px.d4);
 
-      #ifdef DEBUG
+#ifdef DEBUG
       Serial.print("WRITE "); Serial.print(LnPacket->px.d2); Serial.print(" <== ");
       Serial.print(LnPacket->px.d4); Serial.print(" | ");
       Serial.print(LnPacket->px.d4, HEX); Serial.print(" | ");
       Serial.println(LnPacket->px.d4, BIN);
-      #endif
+#endif
     }
 
     // Answer packet
     LocoNet_communication(1); // LocoNet communication, switch on LocoLED
     sendPeerPacket(0x00, 0x00, LnPacket->px.d4);
-    #ifdef DEBUG
-      Serial.println(">> OPC_PEER_XFER answer sent");
-    #endif
+#ifdef DEBUG
+    Serial.println(">> OPC_PEER_XFER answer sent");
+#endif
     return (true);
   }
 
@@ -858,52 +847,52 @@ void sendPeerPacket(uint8_t p0, uint8_t p1, uint8_t p2)
 {
   lnMsg txPacket;
 
-  txPacket.px.command=OPC_PEER_XFER;
-  txPacket.px.mesg_size=0x10;
-  txPacket.px.src=svtable.svt.addr_low;
-  txPacket.px.dst_l=LnPacket->px.src;
-  txPacket.px.dst_h=LnPacket->px.dst_h;
-  txPacket.px.pxct1=0x00;
-  txPacket.px.d1=LnPacket->px.d1;                         //Original command
-  txPacket.px.d2=LnPacket->px.d2;                         //SV requested
-  txPacket.px.d3=svtable.svt.vrsion;
-  txPacket.px.d4=0x00;
-  txPacket.px.pxct2=0x00;
-  txPacket.px.d5=svtable.svt.addr_high;                   //SOURCE high address
-  txPacket.px.d6=p0;
-  txPacket.px.d7=p1;
-  txPacket.px.d8=p2;
+  txPacket.px.command = OPC_PEER_XFER;
+  txPacket.px.mesg_size = 0x10;
+  txPacket.px.src = svtable.svt.addr_low;
+  txPacket.px.dst_l = LnPacket->px.src;
+  txPacket.px.dst_h = LnPacket->px.dst_h;
+  txPacket.px.pxct1 = 0x00;
+  txPacket.px.d1 = LnPacket->px.d1;                       //Original command
+  txPacket.px.d2 = LnPacket->px.d2;                       //SV requested
+  txPacket.px.d3 = svtable.svt.vrsion;
+  txPacket.px.d4 = 0x00;
+  txPacket.px.pxct2 = 0x00;
+  txPacket.px.d5 = svtable.svt.addr_high;                 //SOURCE high address
+  txPacket.px.d6 = p0;
+  txPacket.px.d7 = p1;
+  txPacket.px.d8 = p2;
 
   //Set high bits in correct position
-  bitWrite(txPacket.px.pxct1,0,bitRead(txPacket.px.d1,7));
-  bitClear(txPacket.px.d1,7);
-  bitWrite(txPacket.px.pxct1,1,bitRead(txPacket.px.d2,7));
-  bitClear(txPacket.px.d2,7);
-  bitWrite(txPacket.px.pxct1,2,bitRead(txPacket.px.d3,7));
-  bitClear(txPacket.px.d3,7);
-  bitWrite(txPacket.px.pxct1,3,bitRead(txPacket.px.d4,7));
-  bitClear(txPacket.px.d4,7);
-  bitWrite(txPacket.px.pxct2,0,bitRead(txPacket.px.d5,7));
-  bitClear(txPacket.px.d5,7);
-  bitWrite(txPacket.px.pxct2,1,bitRead(txPacket.px.d6,7));
-  bitClear(txPacket.px.d6,7);
-  bitWrite(txPacket.px.pxct2,2,bitRead(txPacket.px.d7,7));
-  bitClear(txPacket.px.d7,7);
-  bitWrite(txPacket.px.pxct2,3,bitRead(txPacket.px.d8,7));
-  bitClear(txPacket.px.d8,7);
+  bitWrite(txPacket.px.pxct1, 0, bitRead(txPacket.px.d1, 7));
+  bitClear(txPacket.px.d1, 7);
+  bitWrite(txPacket.px.pxct1, 1, bitRead(txPacket.px.d2, 7));
+  bitClear(txPacket.px.d2, 7);
+  bitWrite(txPacket.px.pxct1, 2, bitRead(txPacket.px.d3, 7));
+  bitClear(txPacket.px.d3, 7);
+  bitWrite(txPacket.px.pxct1, 3, bitRead(txPacket.px.d4, 7));
+  bitClear(txPacket.px.d4, 7);
+  bitWrite(txPacket.px.pxct2, 0, bitRead(txPacket.px.d5, 7));
+  bitClear(txPacket.px.d5, 7);
+  bitWrite(txPacket.px.pxct2, 1, bitRead(txPacket.px.d6, 7));
+  bitClear(txPacket.px.d6, 7);
+  bitWrite(txPacket.px.pxct2, 2, bitRead(txPacket.px.d7, 7));
+  bitClear(txPacket.px.d7, 7);
+  bitWrite(txPacket.px.pxct2, 3, bitRead(txPacket.px.d8, 7));
+  bitClear(txPacket.px.d8, 7);
 
   LocoNet_communication(1);        // LocoNet communication, switch on LocoLED
   LocoNet.send(&txPacket);
 
-  #ifdef DEBUG
+#ifdef DEBUG
   Serial.println("Packet sent!");
-  #endif
+#endif
 }
 
 
 /*********************************************************************************************************************
-* Function    : void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) WHY NOT IN GCA51?
-* Description : This call-back function is called from LocoNet.processSwitchSensorMessage
+  Function    : void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) WHY NOT IN GCA51?
+  Description : This call-back function is called from LocoNet.processSwitchSensorMessage
                 for all Switch Request messages
                 In the LocoNet.processSwitchSensorMessage is a pointer to this function
                 The pointer is actualy the name of this function
@@ -917,31 +906,31 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 {
   int n;
 
-  Direction ? Direction=1 : Direction=0; // Direction must be changed to 0 or 1, not 0 or 32
+  Direction ? Direction = 1 : Direction = 0; // Direction must be changed to 0 or 1, not 0 or 32
 
   LocoNet_communication(1);                                                                         // turn on LocoLED
 
-  #ifdef DEBUG
+#ifdef DEBUG
   Serial.print("Switch Request: ");
   Serial.print(Address, DEC);
   Serial.print(':');
   Serial.print(Direction ? "Closed" : "Thrown");
   Serial.print(" - ");
   Serial.println(Output ? "On" : "Off");
-  #endif
+#endif
 
   // Check if Address is assigned on this board, configured as output and same Direction
-  for (n=8; n<16; n++)
+  for (n = 8; n < 16; n++)
   {
     if ((softwareAddress[n] == Address) &&
-        (bitRead(svtable.svt.pincfg[n].cnfg,7) == 1)) // Setup as an Output
+        (bitRead(svtable.svt.pincfg[n].cnfg, 7) == 1)) // Setup as an Output
     {
-      #ifdef DEBUG
-        Serial.print("Output assigned to port ");
-        Serial.print(n+1); Serial.print(" and pin "); Serial.println(pinMap[n]);
-      #endif
+#ifdef DEBUG
+      Serial.print("Output assigned to port ");
+      Serial.print(n + 1); Serial.print(" and pin "); Serial.println(pinMap[n]);
+#endif
       // If pulse (always hardware reset) and Direction, only listen ON message
-      if (bitRead(svtable.svt.pincfg[n].cnfg,3) == 1 && bitRead(svtable.svt.pincfg[n].value2,5) == Direction && Output)
+      if (bitRead(svtable.svt.pincfg[n].cnfg, 3) == 1 && bitRead(svtable.svt.pincfg[n].value2, 5) == Direction && Output)
       {
         digitalWrite(pinMap[n], HIGH);
         delay(150);
@@ -949,7 +938,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
         break;
       }
       // If continue and hardware reset and Direction
-      else if (bitRead(svtable.svt.pincfg[n].cnfg,3)==0 && bitRead(svtable.svt.pincfg[n].cnfg,2)==1 && bitRead(svtable.svt.pincfg[n].value2,5) == Direction)
+      else if (bitRead(svtable.svt.pincfg[n].cnfg, 3) == 0 && bitRead(svtable.svt.pincfg[n].cnfg, 2) == 1 && bitRead(svtable.svt.pincfg[n].value2, 5) == Direction)
       {
         if (Output)
           digitalWrite(pinMap[n], HIGH);
@@ -959,7 +948,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
       }
       // If continue and software reset, one Direction ON turns on and other Direction ON turns off
       // OFF messages are not listened for
-      else if (bitRead(svtable.svt.pincfg[n].cnfg,3)==0 && bitRead(svtable.svt.pincfg[n].cnfg,2)==0 && Output)
+      else if (bitRead(svtable.svt.pincfg[n].cnfg, 3) == 0 && bitRead(svtable.svt.pincfg[n].cnfg, 2) == 0 && Output)
       {
         if (!Direction)
           digitalWrite(pinMap[n], HIGH);
@@ -971,7 +960,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
   }
 }
 /*********************************************************************************************************************
-GCA51 v150 variant, simpler
+  GCA51 v150 variant, simpler
 **********************************************************************************************************************/
 //void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 //{

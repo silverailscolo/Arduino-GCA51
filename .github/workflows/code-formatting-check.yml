@@ -6,13 +6,13 @@ on:
       - ".github/workflows/code-formatting-check.yml"
       - ".clang-format"
       - "examples_formatter.sh"
-      - "examples/**"
+      - "GCA51/**"
   push:
     paths:
       - ".github/workflows/code-formatting-check.yml"
       - ".clang-format"
       - "examples_formatter.sh"
-      - "examples/**"
+      - "GCA51/**"
 
 jobs:
   check-formatting:
