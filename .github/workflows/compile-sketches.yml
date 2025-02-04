@@ -172,6 +172,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout LocoNet custom library
+        uses: actions/checkout@v4
+        with:
+          repository: mrrwa/LocoNet/LocoNet.h
+          ref: main
+          path: CustomLibrary_LocoNet # path must contain string "Custom"
+
       - name: Compile sketches
         uses: arduino/compile-sketches@v1
         with:
@@ -179,8 +186,5 @@ jobs:
           libraries: |
             ${{ env.UNIVERSAL_LIBRARIES }}
             ${{ matrix.usb-libraries }}
-            source-path: ./
-            repository:
-                source-url: https://github.com/mrrwa/LocoNet/LocoNet.h
           sketch-paths: |
             ${{ env.UNIVERSAL_SKETCH_PATHS }}
