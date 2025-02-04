@@ -175,7 +175,7 @@ jobs:
       - name: Checkout LocoNet custom library
         uses: actions/checkout@v4
         with:
-          repository: mrrwa/LocoNet/LocoNet.h
+          repository: mrrwa/LocoNet
           ref: main
           path: CustomLibrary_LocoNet # path must contain string "Custom"
 
