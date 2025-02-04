@@ -156,31 +156,32 @@ const uint8_t rfidOptions[2] = {27, 31};
 typedef struct CNFG_OPTIONS
 {
   uint8_t code;
-  char description;
+  char *description;
 };
 
 const CNFG_OPTIONS configOptions[12] = {
-  { .code = 15, .description = "Toggle",},            // [0]
-  { .code = 31, .description = "Block",},             // [1]
-  { .code = 91, .description = "Block delay",},       // [2]
-  { .code = 39, .description = "Butt. Indir",},       // [3]
-  { .code = 47, .description = "Button",},            // [4]
-  { .code = 27, .description = "Not used",},          // [5]
-  { .code = 128, .description = "Off",},              // [6] for 1: .value2 bits 4-7 = 1
-  { .code = 129, .description = "On",},               // [7] for 2: .value2 bits 4-7 = 3
-  { .code = 144, .description = "Off*",},             // [8]
-  { .code = 145, .description = "On*",},              // [9]
-  { .code = 192, .description = "Block",},            // [10]
-  { .code = 208, .description = "Block*",},           // [11]
+  { .code = 15, .description = "toggle",},            // [0]
+  { .code = 31, .description = "block",},             // [1]
+  { .code = 91, .description = "block delay",},       // [2]
+  { .code = 39, .description = "button Indir",},      // [3]
+  { .code = 47, .description = "button",},            // [4]
+  { .code = 27, .description = "not used",},          // [5]
+  { .code = 128, .description = "off",},              // [6] for 1: .value2 bits 4-7 = 1
+  { .code = 129, .description = "on",},               // [7] for 2: .value2 bits 4-7 = 3
+  { .code = 144, .description = "off blink",},        // [8] bit
+  { .code = 145, .description = "on blink",},         // [9]
+  { .code = 192, .description = "block",},            // [10]
+  { .code = 208, .description = "block*",},           // [11]
 };
 
 // Timers for each input in case of using "block" configuration instead of "input" configuration
 // input defined as "block" will keep the signal high at least 2 seconds
 unsigned long inpTimer[16];  // block delay per cnfg port
 unsigned long blinkRate = 0;  // board setting for blinking rate of output ports
-unsigned long blinkDuration = 50;
-unsigned long currentMillis = 0; // use the same time for all LED flashes to keep them synchronized
-unsigned long previousOnBoardLedMillis = 0; // last time the LED was updated
+unsigned long blinkDuration = 100;
+unsigned long currentBlinkMillis = 0; // use the same time for all LED flashes to keep them synchronized
+unsigned long previousBlinkMillis = 0; // last time the LED was updated
+uint8_t blinkState[16];
 
 // functions common with GCA51a LocoIO are in GCA51Func.cpp
 // extern boolean processPeerPacket(); // TODO move, variables?
@@ -220,56 +221,63 @@ void LocoNet_communication(byte on_off)
  *********************************************************************************/
 void CalculateAddress()
 {
-  int n;
+  uint8_t n; // used for lookup
   byte odd_even;
 
   // RFID ports
   for (n = 0; n < 2; n++)
   {
-    if ((svtable.svt.pincfg[n].cnfg == rfidOptions[0]) || (svtable.svt.pincfg[n].cnfg == rfidOptions[1])) // declared as input, active low: see configOptions[] for descriptions
+    if ((svtable.svt.pincfg[n].cnfg == rfidOptions[0]) || (svtable.svt.pincfg[n].cnfg == rfidOptions[1]))
+      // declared as input, active low: see configOptions[] for descriptions
     {
       if (bitRead (svtable.svt.pincfg[n].value2, 5)) odd_even = 2; // bitread for bit 5 in SV5, SV8, SV11, SV14 etc.
       else odd_even = 1;
       softwareAddress[n] = (((svtable.svt.pincfg[n].value2 & 0x0F) << 8 ) + (svtable.svt.pincfg[n].value1 << 1 ) + odd_even); // Calculate software address of port. Eg. for Port 1 .value1 == SV4 and .value2 == SV5
       // (SV5 & 0x0F) << 8 == high byte + SV4 << 1 == low byte + odd_even == software-address of the hardware-port
-      Serial.print ("- RFID Reader RC522-"); Serial.print (n + 1); Serial.print (" input, address: "); Serial.println(softwareAddress[n], DEC);
+      Serial.print ("- RFID Reader RC522-"); Serial.print (n + 1); Serial.print (" input, address: "); Serial.print(softwareAddress[n], DEC);
+      Serial.print(" (cfg: "); Serial.print(svtable.svt.pincfg[n].cnfg); Serial.println(")");
     } else {
       Serial.print ("- RFID Reader port"); Serial.print (n); Serial.print(" should be configured as Input - Block Detector - Active Low (- Delayed optional). Skipping. Err: config="); Serial.println(svtable.svt.pincfg[n].cnfg);
     }
   }
 
   // normal I/O ports
-  // char *p;
+  //char *p;
   for (n = 2; n < 16; n++)
   {
-    if ((findConfig(svtable.svt.pincfg[n].cnfg) != -1) && (!bitRead(svtable.svt.pincfg[n].cnfg, 7)))
-    // configured as inputs, active low
+    if (findConfig(svtable.svt.pincfg[n].cnfg) != -1)
     {
-      if (bitRead (svtable.svt.pincfg[n].value2, 5)) odd_even = 2; // bitread for bit 5 in SV5, SV8, SV11, SV14 etc.
-      else odd_even = 1;
+      if (!bitRead(svtable.svt.pincfg[n].cnfg, 7))
+        // configured as inputs, active low
+      {
+        if (bitRead (svtable.svt.pincfg[n].value2, 5)) odd_even = 2; // bitread for bit 5 in SV5, SV8, SV11, SV14 etc.
+        else odd_even = 1;
 
-      softwareAddress[n] = (((svtable.svt.pincfg[n].value2 & 0x0F) << 8 ) + (svtable.svt.pincfg[n].value1 << 1 ) + odd_even); // Calculate software address of port. For Port 1 .value1 == SV4 and .value2 == SV5
-      // (SV5 & 0x0F) << 8 == high byte + SV4 << 1 == low byte + odd_even == software-address of the hardware-port
-      if (n > 7) {
-        Serial.print("- Port "); Serial.print(n); Serial.print (" [H"); Serial.print (n - 7); Serial.print("] input, address: "); Serial.print(softwareAddress[n], DEC); Serial.print(" as: ");
-        // p = getConfig(svtable.svt.pincfg[n].cnfg); // pin config description
-        // Serial.println(p); // adds pin config description
-        Serial.println(svtable.svt.pincfg[n].cnfg);
-      } else {
-        Serial.print("- Port "); Serial.print(n); Serial.println(" N/A");
+        softwareAddress[n] = (((svtable.svt.pincfg[n].value2 & 0x0F) << 8 ) + (svtable.svt.pincfg[n].value1 << 1 ) + odd_even); // Calculate software address of port. For Port 1 .value1 == SV4 and .value2 == SV5
+        // (SV5 & 0x0F) << 8 == high byte + SV4 << 1 == low byte + odd_even == software-address of the hardware-port
+        if (n > 7) {
+          Serial.print("- Port "); Serial.print(n); Serial.print (" [H"); Serial.print (n - 7); Serial.print("] input, address: "); Serial.print(softwareAddress[n], DEC);
+          Serial.print(" (cfg: ");
+          //p = getConfig(svtable.svt.pincfg[n].cnfg); // pin config description
+          //Serial.print(p); // adds pin config description
+          Serial.print(svtable.svt.pincfg[n].cnfg); Serial.println(")");
+        } else {
+          Serial.print("- Port "); Serial.print(n); Serial.println(" N/A");
+        }
       }
-    }
-    else if ((findConfig(svtable.svt.pincfg[n].cnfg) != -1) && (bitRead(svtable.svt.pincfg[n].cnfg, 7)))
-    // configured as outputs
-    {
-      softwareAddress[n] = (((svtable.svt.pincfg[n].value2 & 0x0F) << 8 ) + (svtable.svt.pincfg[n].value1) + 1); // Calculated software address of the port. Eg. for Port 1 .value1 == SV4 and .value2 == SV5
-      if (n > 7) {
-        Serial.print ("- Port "); Serial.print (n); Serial.print (" [H"); Serial.print(n - 7); Serial.print("] output, address: "); Serial.print(softwareAddress[n], DEC); Serial.print(" as: ");
-        // p = getConfig(svtable.svt.pincfg[n].cnfg);
-        // Serial.println(p); // adds pin config description
-        Serial.println(svtable.svt.pincfg[n].cnfg);
-      } else {
-        Serial.print ("- Port "); Serial.print (n); Serial.println(" N/A");
+      else if (bitRead(svtable.svt.pincfg[n].cnfg, 7))
+        // configured as outputs
+      {
+        softwareAddress[n] = (((svtable.svt.pincfg[n].value2 & 0x0F) << 8 ) + (svtable.svt.pincfg[n].value1) + 1); // Calculated software address of the port. Eg. for Port 1 .value1 == SV4 and .value2 == SV5
+        if (n > 7) {
+          Serial.print ("- Port "); Serial.print (n); Serial.print (" [H"); Serial.print(n - 7); Serial.print("] output, address: "); Serial.print(softwareAddress[n], DEC);
+          Serial.print(" (cfg: ");
+          //p = getConfig(svtable.svt.pincfg[n].cnfg);
+          //Serial.print(p); // adds pin config description
+          Serial.print(svtable.svt.pincfg[n].cnfg); Serial.println(")");
+        } else {
+          Serial.print ("- Port "); Serial.print (n); Serial.println(" N/A");
+        }
       }
     }
     else
@@ -333,7 +341,7 @@ ISR(PCINT1_vect)            // Interrupt service routine. Every single PCINT8..1
 ****************************************************************************************************************************/
 int findConfig(int target)
 {
-  int i;
+  uint8_t i;
   for (i = 0; i < ELEMENTCOUNT(configOptions); i++)
   {
     if (configOptions[i].code == target)
@@ -347,15 +355,14 @@ int findConfig(int target)
 /***************************************************************************************************************************
   Purpose: Display all pin descriptions (for Serial Monitor)
   ***********************/
-char *getConfig(int pin)
+char * getConfig(int pin)
 {
   char *desc = (char*) malloc (20);
-  strcpy(desc, configOptions[pin].description);
-
   if (findConfig(svtable.svt.pincfg[pin].cnfg) != -1) {
-      return desc;
+    strcpy(desc, configOptions[uint8_t(svtable.svt.pincfg[pin].cnfg)].description);
+    return desc;
   } else {
-     return("not found");
+    return ("not found");
   }
 }
 
@@ -371,7 +378,7 @@ void setup()
   pinMode (LocoLED, OUTPUT);                    // LocoLED pin to indicate LocoNet communication
 
   // start_setup();  // Start values of the board in LocoGCA51.cpp <<<< Not available, copied from latest GCA50a
-  // rfid2ln boardSetup() assumes 1 RFID reader per board so we can't use it here
+  // rfid2ln boardSetup() assumes 1 RFID reader per board so we can't use it here TODO write GCA51 setup() method
 
   // Configure the serial port
 #ifdef DEBUG
@@ -413,7 +420,8 @@ void setup()
   }
   CalculateAddress();                 // Calculate software addresses and store in global variable softwareAddress[16]
   // load board settings from SV0
-  blinkRate = (svtable.data[0] >> 4); // scale? check with a real LocoIO
+  blinkRate = (svtable.data[0] >> 4); // 100x scale? check with a real LocoIO
+  blinkDuration = blinkRate / 2;      // use 50% of blinkRate. Make configurable?
   Serial.print("Board blink rate: "); Serial.println(blinkRate);
 
   // Configure I/O pins and give the outputs a start value
@@ -427,7 +435,10 @@ void setup()
     {
       pinMode(pinMap[n - 8], OUTPUT);
       if (bitRead(svtable.svt.pincfg[n].cnfg, 0))  digitalWrite(pinMap[n - 8], HIGH);   // if cnfg bit 0 == 1 the output is HIGH at startup
-      else  digitalWrite(pinMap[n - 8], LOW);                                           // else the output is LOW at startup
+      else digitalWrite(pinMap[n - 8], LOW);                                            // else the output is LOW at startup
+
+      if (bitRead(svtable.svt.pincfg[n].cnfg, 4)) blinkState[n] = 1; // start blink as on
+      else blinkState[n] = 255; // uint8_t off marker
     }
     else
     { // if cnfg bit 7 is 0, pin is an Input
@@ -509,11 +520,12 @@ void setup()
 
 void loop()   // *************** MAIN LOOP () *************************
 {
-  static int n, time_msec;
+  static uint8_t n;
+  static int time_msec;
   byte temp_IO;
   static unsigned long IO_timing[8];                   // array[8] with Pulse- or Debounce timing for each IO-port
   static unsigned long CurrentTime;                    // time of this moment
-  currentMillis = millis();                            // capture the latest value of millis()
+  currentBlinkMillis = millis();                            // capture the latest value of millis()
   static byte remember_input[8];                       // remembers which input was active.  After "waittime" the program will reset this input(s)
 
   LocoNet_communication(0);                            // switch off LocoLED when the wait time has expired
@@ -541,16 +553,14 @@ void loop()   // *************** MAIN LOOP () *************************
   }
 
   /********************************** OUTPUTS *******************************************
-    handled by call-back function notifySwitchRequest to LocoNet.processSwitchSensorMessage */
+    handled by call-back function notifySwitchRequest to LocoNet.processSwitchSensorMessage
+    blinking outputs are checked in the next for loop
 
-  //for (n = 8; n < 16; n++)
-  //{
-    updateBlink(8);
-  //}
-
-  /******************************* HANDLE INPUTS *****************************************/
-  for (n = 8; n < 16; n++)                                                                           // Check I/O ports 8 till 15. I/O ports 0 till 7 are used for the communication with the RFID equipment
+   ******************************* HANDLE INPUTS *****************************************/
+  for (n = 8; n < 16; n++)                                                                           // Check I/O ports 8 - 15. I/O ports 0 - 7 are used for the communication with the RFID equipment
   {
+    updateBlink(n);                                                                                  // override pin state for blinking outputs
+
     if ((IO_timing[n - 8] == 0) && (!bitRead(svtable.svt.pincfg[n].cnfg, 7)))                        // no WaitTime active && port is an input
     {
       if (IO_status[n - 8] == 1)                                                                     // IO_status contains the last known value. At the ISR's this array is filled with new input information
@@ -1092,24 +1102,50 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 
 /*********************************************************************************************************************
   Purpose:      Handle blink timer if output is ON
-  Description : Adapted from GCA51 v150 LocoIO (n=8; n<16) and extra bits checked. TODO also blink?
+  Description : Adapted from GCA51 v150 LocoIO (n=8; n<16) and .cfg bit 4 checked.
+
+  Blink config bit 4:
+  d144 = b10010000
+  d145 = b10010001
+  No blink:
+  d128 = b10000000
+  d129 = b10000001
 **********************************************************************************************************************/
 void updateBlink(uint8_t portIdx) {
+  const uint16_t blinkFactor = 100;
 
-  if (bitRead(svtable.svt.pincfg[portIdx].value2, 4) == HIGH) {
-    // if output is off, we must wait for the interval to expire before turning it on
-    if (currentMillis - previousOnBoardLedMillis >= blinkRate) { // time is up, so change the state to LOW
-      digitalWrite(pinMap[portIdx], LOW);
-      previousOnBoardLedMillis += blinkRate; // save the time when we made the change
-    }
-  }
-  else {  // i.e. if onBoardLedState is LOW
-    // if output is on, we must wait for the duration to expire before turning it off
-    if (currentMillis - previousOnBoardLedMillis >= blinkDuration) {
-      // time is up, so change the state to HIGH (off)
-      digitalWrite(pinMap[portIdx], HIGH);
-      // and save the time when we made the change
-      previousOnBoardLedMillis += blinkDuration;
+  if (blinkRate > 0 && bitRead(svtable.svt.pincfg[portIdx].cnfg, 4)) // // only blink for 148/149 -- debug inverted cnfg check to use port 8
+  {
+    if (bitRead(svtable.svt.pincfg[portIdx].value2, 4) == HIGH) // only blink when ON
+    {
+      if (blinkState[portIdx] == 1) {
+        // if output is currently off, wait for the interval to expire before turning it on
+        if (currentBlinkMillis - previousBlinkMillis >= blinkRate * blinkFactor) { // time is up, so change the state to LOW (on)
+          //Serial.print(pinMap[portIdx-8]); Serial.print(" pin  on if >900? curr-prev = "); Serial.println(currentBlinkMillis - previousBlinkMillis);
+          digitalWrite(pinMap[portIdx - 8], LOW);
+          blinkState[portIdx] = 0;
+          previousBlinkMillis = currentBlinkMillis + blinkRate; // save the time when we made the change
+          //Serial.print(portIdx); Serial.print(" port set 0/LO prev = "); Serial.println(previousBlinkMillis);
+        }
+      }
+      else if (blinkState[portIdx] == 0)
+      {
+        // if output is currently on, wait for the duration to expire before turning it off
+        if (currentBlinkMillis - previousBlinkMillis >= blinkDuration * blinkFactor) {
+          // time is up, so change the state to HIGH (off)
+          //Serial.print(pinMap[portIdx-8]); Serial.print("pin off if >450? curr-prev = "); Serial.println(currentBlinkMillis - previousBlinkMillis);
+          digitalWrite(pinMap[portIdx - 8], HIGH);
+          blinkState[portIdx] = 1;
+          previousBlinkMillis = currentBlinkMillis + blinkDuration; // save the time when we made this change
+          //Serial.print(portIdx); Serial.print(" port set 1/HI prev = "); Serial.println(previousBlinkMillis);
+        }
+      } else {
+        Serial.print("Unexpected updateBlink() for port "); Serial.println(portIdx);
+      }
+    } else { // output commanded state if HIGH (off) so turn off pin
+      digitalWrite(pinMap[portIdx - 8], HIGH);
+      blinkState[portIdx] == 0;
+      Serial.print("Turned off output for port "); Serial.println(portIdx);
     }
   }
 }

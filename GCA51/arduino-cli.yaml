@@ -1,0 +1,3 @@
+# location to store custom libraries on GitHub Arduino compile-sketches action
+directories:
+  user: CustomLibs
