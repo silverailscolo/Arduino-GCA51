@@ -177,7 +177,7 @@ jobs:
         with:
           repository: mrrwa/LocoNet
           ref: master
-          path: CustomLibs/ # path must contain string "Custom"
+          path: GCA51/CustomLibs/ # path must contain string "Custom"
 
       - name: Compile sketches
         uses: arduino/compile-sketches@v1
