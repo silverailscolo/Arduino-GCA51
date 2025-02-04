@@ -44,7 +44,7 @@
   sensor address explodes after 10 reads/LN_BUFF_LEN==10
 *************************************************************************/
 
-#include <LocoNet.h>
+#include "LocoNet.h"
 #include <SPI.h>
 #include <EEPROM.h>
 // LocoIO functions from GCA51a included as extern, see below
