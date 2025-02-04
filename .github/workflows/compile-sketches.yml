@@ -179,5 +179,8 @@ jobs:
           libraries: |
             ${{ env.UNIVERSAL_LIBRARIES }}
             ${{ matrix.usb-libraries }}
+            source-path: ./
+            repository:
+                source-url: https://github.com/mrrwa/LocoNet/LocoNet.h
           sketch-paths: |
             ${{ env.UNIVERSAL_SKETCH_PATHS }}
