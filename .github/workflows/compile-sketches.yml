@@ -179,7 +179,13 @@ jobs:
         with:
           repository: mrrwa/LocoNet
           ref: master
-          path: GCA51/src/CustomLibs/ # path must contain string "Custom"
+          path: GCA51/CustomLibs/ # path must contain string "Custom"
+
+      - name: Install repo as library
+        run: |
+          mkdir -p "$HOME/Arduino/libraries"
+          ln -s "$PWD/CustomLibs/" "$HOME/Arduino/libraries/."
+        # ln creates a symlink
 
       - name: Compile sketches
         uses: arduino/compile-sketches@v1
