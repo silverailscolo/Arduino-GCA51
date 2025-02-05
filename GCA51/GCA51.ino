@@ -1013,7 +1013,7 @@ void sendPeerPacket(uint8_t p0, uint8_t p1, uint8_t p2)
                 In the LocoNet.processSwitchSensorMessage is a pointer to this function
                 The pointer is actually the name of this function
                 This function always sends two commands within 0.5 seconds.
-                In both commands the Address and Direction are the same, only Ouput switches from 1 to 0 within this 0.5 second
+                In both commands the Address and Direction are the same, only Output switches from 1 to 0 within this 0.5 second
                 This behavior prevents the turnout coil becoming too hot.
                 In this function we only deal with steady state outputs, so we only use the variables Direction and Address
 
