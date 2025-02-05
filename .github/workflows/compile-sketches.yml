@@ -191,10 +191,10 @@ jobs:
       - name: Install repo as library
         run: |
           mkdir -p "$HOME/Arduino/libraries"
-          ln -s "$PWD/CustomLibs/" "$HOME/Arduino/libraries/."
+          ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
               # ln creates a symlink
           ls -l "$HOME/Arduino/libraries/"
-          ls -l "$PWD/CustomLibs/"
+          ls -l "$PWD/GCA51/CustomLibs/"
 
       - name: Compile sketches
         uses: arduino/compile-sketches@v1
