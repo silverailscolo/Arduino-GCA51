@@ -198,6 +198,7 @@ jobs:
       - name: Install repo as library
         run: |
           ln -s "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/LocoNet.h"
+          mkdir -p "$PWD/GCA51/utility"
           ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/utility/."
           ln -s "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/rfid2ln.h"
               # ln -s creates direct symlinks
