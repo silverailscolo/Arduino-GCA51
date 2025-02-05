@@ -192,9 +192,8 @@ jobs:
 
       - name: Install repo as library
         run: |
-          - mkdir -p "$HOME/Arduino/libraries"
-          - ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
-            # ln -s creates a symlink
+          mkdir -p "$HOME/Arduino/libraries"
+          ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
 
       - name: Install repos as copies
         run: |
