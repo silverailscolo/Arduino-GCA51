@@ -198,11 +198,12 @@ jobs:
       - name: Install repos as symlinks
         run: |
           ln -s "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/LocoNet.h"
-          mkdir -p "$PWD/GCA51/utility"
+              # mkdir -p "$PWD/GCA51/utility"
+          cp -R "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/"
               # ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/utility/."
-          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_buf.h" "$PWD/GCA51/utility/ln_buf.h"
-          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_opc.h" "$PWD/GCA51/utility/ln_opc.h"
-          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/utils.h" "$PWD/GCA51/utility/utils.h"
+              # ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_buf.h" "$PWD/GCA51/utility/ln_buf.h"
+              # ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_opc.h" "$PWD/GCA51/utility/ln_opc.h"
+              # ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/utils.h" "$PWD/GCA51/utility/utils.h"
               # also for rfid2ln:
           ln -s "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/rfid2ln.h"
               # ln -s creates direct symlink
