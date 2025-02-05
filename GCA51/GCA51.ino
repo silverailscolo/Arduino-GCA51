@@ -177,9 +177,9 @@ const CNFG_OPTIONS configOptions[12] = {
 // Timers for each input in case of using "block" configuration instead of "input" configuration
 // input defined as "block" will keep the signal high at least 2 seconds
 unsigned long inpTimer[16];   // block delay per cnfg port
-unsigned uint8_t blinkRate = 0;  // default board setting for blinking rate of output ports
-unsigned uint16_t blinkPeriod = 2000;
-unsigned uint16_t blinkDuration = 1000;
+uint8_t blinkRate = 0;  // default board setting for blinking rate of output ports
+uint16_t blinkPeriod = 2000;
+uint16_t blinkDuration = 1000;
 unsigned long currentBlinkMillis = 0; // use the same time for all LED flashes to keep them synchronized
 unsigned long previousBlinkMillis = 0; // last time the LED was updated
 uint8_t blinkState[16];
@@ -300,7 +300,7 @@ void InitialiseInterrupt()
   cli();                    // turn off interrupts while messing with their settings
   PCICR = 0x02;             // PCIE1 interrupt is enabled for pin group A0 .. A7
 
-  for (n = 8; n < 14; n++)  // only inputs should give an interupt. Select A0..A5
+  for (n = 8; n < 14; n++)  // only inputs should give an interrupt. Select A0..A5
   {
     if (!bitRead(svtable.svt.pincfg[n].cnfg, 7))        // I/O port is an input
       bitWrite (PCMSK1, n - 8, 1);                      // interrupts on pins A0 .. A5
@@ -432,7 +432,7 @@ void setup()
   Serial.println("Initializing pins...");
 #endif
   for (n = 8; n < 16; n++)            // The first 8 I/O ports are already set and are not available to users, except the addresses of port 1 and 2 (RFID sensor ports)
-    // The actual hardware Nano pin numbers are declared in the global variabele pinMap[]
+    // The actual hardware Nano pin numbers are declared in the global variable pinMap[]
   {
     if (bitRead(svtable.svt.pincfg[n].cnfg, 7))                                         // if cnfg bit 7 == 1, pin is an Output
     {
@@ -1011,7 +1011,7 @@ void sendPeerPacket(uint8_t p0, uint8_t p1, uint8_t p2)
   Description : This call-back function is called from LocoNet.processSwitchSensorMessage
                 for all Switch Request messages
                 In the LocoNet.processSwitchSensorMessage is a pointer to this function
-                The pointer is actualy the name of this function
+                The pointer is actually the name of this function
                 This function always sends two commands within 0.5 seconds.
                 In both commands the Address and Direction are the same, only Ouput switches from 1 to 0 within this 0.5 second
                 This behavior prevents the turnout coil becoming too hot.
@@ -1135,7 +1135,7 @@ void updateBlink(uint8_t portIdx) {
       else if (blinkState[portIdx] == 0)
       {
         // if output is currently on, wait for the duration to expire before turning it off
-        if (currentBlinkMillis - previousBlinkMillis >= blinkDuration * blinkFactor) {
+        if (currentBlinkMillis - previousBlinkMillis >= blinkDuration) {
           // time is up, so change the state to HIGH (off)
           digitalWrite(pinMap[portIdx - 8], HIGH);
           blinkState[portIdx] = 1;
