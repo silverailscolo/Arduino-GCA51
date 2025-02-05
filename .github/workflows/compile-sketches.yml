@@ -207,6 +207,7 @@ jobs:
           ln -s "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/rfid2ln.h"
               # ln -s creates direct symlink
           ls -l "$PWD/GCA51/"
+          ls -l "$PWD/GCA51/utility/"
 
       - name: Compile sketches
         uses: arduino/compile-sketches@v1
