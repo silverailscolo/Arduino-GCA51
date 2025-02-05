@@ -171,7 +171,7 @@ jobs:
             # Compile these sketches in addition to the ones defined by env.UNIVERSAL_SKETCH_PATHS
 
     steps:
-      - name: Checkout
+      - name: Checkout GCA51
         uses: actions/checkout@v4
 
       - name: Checkout LocoNet custom library
@@ -192,9 +192,15 @@ jobs:
         run: |
           mkdir -p "$HOME/Arduino/libraries"
           ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
-              # ln creates a symlink
+              # ln -s creates a symlink
           ls -l "$HOME/Arduino/libraries/"
           ls -l "$PWD/GCA51/CustomLibs/"
+
+      - name: Install repo as library
+        run: |
+          ln -s "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/LocoNet.h"
+          ln -s "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/rfid2ln.h"
+              # ln -s creates direct symlinks
 
       - name: Compile sketches
         uses: arduino/compile-sketches@v1
