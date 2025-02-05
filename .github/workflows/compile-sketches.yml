@@ -20,6 +20,8 @@ on:
       - "**"
       - "!.github/workflows/compile-sketches.ya?ml"
       - "!GCA51/**"
+      - "GCA51/CustomLibs/LocoNet/examples/**"
+      - "GCA51/CustomLibs/rfid2ln/**"
       - "**.adoc"
       - "**.jpg"
       - "**.md"
@@ -30,6 +32,7 @@ on:
       - "**"
       - "!.github/workflows/compile-sketches.ya?ml"
       - "!GCA51/**"
+      - "GCA51/CustomLibs/examples/**"
       - "**.adoc"
       - "**.jpg"
       - "**.md"
@@ -169,8 +172,40 @@ jobs:
             # Compile these sketches in addition to the ones defined by env.UNIVERSAL_SKETCH_PATHS
 
     steps:
-      - name: Checkout
+      - name: Checkout GCA51
         uses: actions/checkout@v4
+
+      - name: Checkout LocoNet custom library
+        uses: actions/checkout@v4
+        with:
+          repository: mrrwa/LocoNet
+          ref: master
+          path: GCA51/CustomLibs/LocoNet # path must contain string "Custom"
+
+      - name: Checkout rfid2ln custom library
+        uses: actions/checkout@v4
+        with:
+          repository: lmmeng/rfid2ln
+          ref: master
+          path: GCA51/CustomLibs/rfid2ln # path must contain string "Custom"
+
+      - name: Install repo as library
+        run: |
+          mkdir -p "$HOME/Arduino/libraries"
+          ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
+              # ln -s creates a symlink
+
+      - name: Install repos as symlinks
+        run: |
+          ln -s "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/LocoNet.h"
+          mkdir -p "$PWD/GCA51/utility"
+          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/utility/."
+          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_buf.h" "$PWD/GCA51/utility/ln_buf.h"
+          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_opc.h" "$PWD/GCA51/utility/ln_opc.h"
+          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/utils.h" "$PWD/GCA51/utility/utils.h"
+              # also for rfid2ln:
+          ln -s "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/rfid2ln.h"
+              # ln -s creates direct symlink
 
       - name: Compile sketches
         uses: arduino/compile-sketches@v1

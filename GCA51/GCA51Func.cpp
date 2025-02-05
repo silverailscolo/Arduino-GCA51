@@ -54,7 +54,7 @@
 * Function    : void notifyPower( uint8_t State )
 * Description : This call-back function is called from LocoNet.processSwitchSensorMessage for all Sensor messages
 *               In the LocoNet.processSwitchSensorMessage is a pointer to this function
-*               The pointer is actualy the name of this function
+*               The pointer is actually the name of this function
 **********************************************************************************************************************/
 void notifyPower( uint8_t State )
 {
@@ -95,7 +95,7 @@ void notifyPower( uint8_t State )
 * Function    : void notifySensor( uint16_t Address, uint8_t State )
 * Description : This call-back function is called from LocoNet.processSwitchSensorMessage for all Sensor messages
 *               In the LocoNet.processSwitchSensorMessage is a pointer to this function
-*               The pointer is actualy the name of this function
+*               The pointer is actually the name of this function
 **********************************************************************************************************************/
 void notifySensor( uint16_t Address, uint8_t State )
 {
@@ -111,7 +111,7 @@ void notifySensor( uint16_t Address, uint8_t State )
 * Function    : void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction )
 * Description : This call-back function is called from LocoNet.processSwitchSensorMessage for all Sensor messages
 *               In the LocoNet.processSwitchSensorMessage is a pointer to this function
-*               The pointer is actualy the name of this function
+*               The pointer is actually the name of this function
 **********************************************************************************************************************/
 void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction )
 {
