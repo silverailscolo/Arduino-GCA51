@@ -179,13 +179,22 @@ jobs:
         with:
           repository: mrrwa/LocoNet
           ref: master
-          path: GCA51/CustomLibs/ # path must contain string "Custom"
+          path: GCA51/CustomLibs/LocoNet # path must contain string "Custom"
+
+      - name: Checkout rfid2ln custom library
+        uses: actions/checkout@v4
+        with:
+          repository: lmmeng/rfid2ln
+          ref: master
+          path: GCA51/CustomLibs/rfid2ln # path must contain string "Custom"
 
       - name: Install repo as library
         run: |
           mkdir -p "$HOME/Arduino/libraries"
           ln -s "$PWD/CustomLibs/" "$HOME/Arduino/libraries/."
-        # ln creates a symlink
+              # ln creates a symlink
+          ls -l "$HOME/Arduino/libraries/"
+          ls -l "$PWD/CustomLibs/"
 
       - name: Compile sketches
         uses: arduino/compile-sketches@v1

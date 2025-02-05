@@ -1,8 +1,13 @@
+![workflow status](https://github.com/silverailscolo/GCA51/actions/workflows/compile-sketches.yml/badge.svg)
+![workflow status](https://github.com/silverailscolo/GCA51/actions/workflows/sync-labels.yml/badge.svg)
+![workflow status](https://github.com/silverailscolo/GCA51/actions/workflows/code-formatting-check.yml/badge.svg)
+![workflow status](https://github.com/silverailscolo/GCA51/actions/workflows/spell-check.yml/badge.svg)
+
 ## Overview
 **GCA51** is a sketch to attach 2 RC522 RFID readers to an Arduino Nano based LocoIO module.
 Earlier version were successfully used in RocRail and JMRI.
 
-_NOTE: This code is under development as per January 2025 (see Issues)._
+_NOTE: This code is under development as per February 2025 (see Issues)._
 
 The code requires GCA51 hardware, available as a PCB or kit from [P. Giling](https://wiki.rocrail.net/doku.php?id=gca51-en).
 
