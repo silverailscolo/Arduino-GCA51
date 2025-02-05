@@ -20,7 +20,8 @@ on:
       - "**"
       - "!.github/workflows/compile-sketches.ya?ml"
       - "!GCA51/**"
-      - "GCA51/CustomLibs/examples/**"
+      - "GCA51/CustomLibs/LocoNet/examples/**"
+      - "GCA51/CustomLibs/rfid2ln/**"
       - "**.adoc"
       - "**.jpg"
       - "**.md"
@@ -193,12 +194,11 @@ jobs:
           mkdir -p "$HOME/Arduino/libraries"
           ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
               # ln -s creates a symlink
-          ls -l "$HOME/Arduino/libraries/"
-          ls -l "$PWD/GCA51/CustomLibs/"
 
       - name: Install repo as library
         run: |
           ln -s "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/LocoNet.h"
+          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/utility/."
           ln -s "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/rfid2ln.h"
               # ln -s creates direct symlinks
 

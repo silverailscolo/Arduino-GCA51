@@ -176,9 +176,10 @@ const CNFG_OPTIONS configOptions[12] = {
 
 // Timers for each input in case of using "block" configuration instead of "input" configuration
 // input defined as "block" will keep the signal high at least 2 seconds
-unsigned long inpTimer[16];  // block delay per cnfg port
-unsigned long blinkRate = 0;  // board setting for blinking rate of output ports
-unsigned long blinkDuration = 100;
+unsigned long inpTimer[16];   // block delay per cnfg port
+unsigned uint8_t blinkRate = 0;  // default board setting for blinking rate of output ports
+unsigned uint16_t blinkPeriod = 2000;
+unsigned uint16_t blinkDuration = 1000;
 unsigned long currentBlinkMillis = 0; // use the same time for all LED flashes to keep them synchronized
 unsigned long previousBlinkMillis = 0; // last time the LED was updated
 uint8_t blinkState[16];
@@ -416,12 +417,14 @@ void setup()
 
   // Load config from EEPROM
   for (n = 0; n < 51; n++) {
-    svtable.data[n] = EEPROM.read(n); // Read the values of SV0 till SV51. The values in EEPROM were OK or standardised in start_setup()
+    svtable.data[n] = EEPROM.read(n);  // Read the values of SV0 till SV51. The values in EEPROM were OK or standardised in start_setup()
   }
-  CalculateAddress();                 // Calculate software addresses and store in global variable softwareAddress[16]
+  CalculateAddress();                  // Calculate software addresses and store in global variable softwareAddress[16]
+
   // load board settings from SV0
-  blinkRate = (svtable.data[0] >> 4); // 100x scale? check with a real LocoIO
-  blinkDuration = blinkRate / 2;      // use 50% of blinkRate. Make configurable?
+  blinkRate = (svtable.data[0] >> 4);  // actual blinkPeriod was checked with a real LocoIO
+  blinkPeriod = 2000 - 12 * blinkRate;
+  blinkDuration = blinkPeriod / 2;     // use 50% of blinkRate. Make configurable?
   Serial.print("Board blink rate: "); Serial.println(blinkRate);
 
   // Configure I/O pins and give the outputs a start value
@@ -1101,8 +1104,12 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 
 
 /*********************************************************************************************************************
-  Purpose:      Handle blink timer if output is ON
+  Purpose:      Handle blink timer if output commanded state is ON. Turn output off if commanded state is OFF.
   Description : Adapted from GCA51 v150 LocoIO (n=8; n<16) and .cfg bit 4 checked.
+
+  blinkRate (Board setting) is in range 0 - 15
+  blinkPeriod is in range 2000 ms (@0) - 250 ms (@15)
+  blinkDuration = blinkPeriod/2
 
   Blink config bit 4:
   d144 = b10010000
@@ -1112,20 +1119,17 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
   d129 = b10000001
 **********************************************************************************************************************/
 void updateBlink(uint8_t portIdx) {
-  const uint16_t blinkFactor = 100;
 
-  if (blinkRate > 0 && bitRead(svtable.svt.pincfg[portIdx].cnfg, 4)) // // only blink for 148/149 -- debug inverted cnfg check to use port 8
+  if (bitRead(svtable.svt.pincfg[portIdx].cnfg, 4)) // // only blink for 148/149 -- debug inverted cnfg check to use port 8
   {
     if (bitRead(svtable.svt.pincfg[portIdx].value2, 4) == HIGH) // only blink when ON
     {
       if (blinkState[portIdx] == 1) {
         // if output is currently off, wait for the interval to expire before turning it on
-        if (currentBlinkMillis - previousBlinkMillis >= blinkRate * blinkFactor) { // time is up, so change the state to LOW (on)
-          //Serial.print(pinMap[portIdx-8]); Serial.print(" pin  on if >900? curr-prev = "); Serial.println(currentBlinkMillis - previousBlinkMillis);
+        if (currentBlinkMillis - previousBlinkMillis >= blinkPeriod) { // time is up, so change the state to LOW (on)
           digitalWrite(pinMap[portIdx - 8], LOW);
           blinkState[portIdx] = 0;
-          previousBlinkMillis = currentBlinkMillis + blinkRate; // save the time when we made the change
-          //Serial.print(portIdx); Serial.print(" port set 0/LO prev = "); Serial.println(previousBlinkMillis);
+          previousBlinkMillis = currentBlinkMillis + blinkPeriod; // save the time when we made the change
         }
       }
       else if (blinkState[portIdx] == 0)
@@ -1133,11 +1137,9 @@ void updateBlink(uint8_t portIdx) {
         // if output is currently on, wait for the duration to expire before turning it off
         if (currentBlinkMillis - previousBlinkMillis >= blinkDuration * blinkFactor) {
           // time is up, so change the state to HIGH (off)
-          //Serial.print(pinMap[portIdx-8]); Serial.print("pin off if >450? curr-prev = "); Serial.println(currentBlinkMillis - previousBlinkMillis);
           digitalWrite(pinMap[portIdx - 8], HIGH);
           blinkState[portIdx] = 1;
           previousBlinkMillis = currentBlinkMillis + blinkDuration; // save the time when we made this change
-          //Serial.print(portIdx); Serial.print(" port set 1/HI prev = "); Serial.println(previousBlinkMillis);
         }
       } else {
         Serial.print("Unexpected updateBlink() for port "); Serial.println(portIdx);
