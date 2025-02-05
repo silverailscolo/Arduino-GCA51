@@ -19,8 +19,8 @@ on:
     paths-ignore:
       - "**"
       - "!.github/workflows/compile-sketches.ya?ml"
-      - "GCA51/CustomLibs/LocoNet/examples/**"
-      - "GCA51/CustomLibs/rfid2ln/**"
+        # - "GCA51/CustomLibs/LocoNet/examples/**"
+        # - "GCA51/CustomLibs/rfid2ln/**"
       - "!GCA51/**"
       - "**.adoc"
       - "**.jpg"
@@ -31,8 +31,8 @@ on:
     paths-ignore:
       - "**"
       - "!.github/workflows/compile-sketches.ya?ml"
-      - "GCA51/CustomLibs/LocoNet/examples/**"
-      - "GCA51/CustomLibs/rfid2ln/**"
+        # - "GCA51/CustomLibs/LocoNet/examples/**"
+        # - "GCA51/CustomLibs/rfid2ln/**"
       - "!GCA51/**"
       - "**.adoc"
       - "**.jpg"
@@ -192,23 +192,14 @@ jobs:
 
       - name: Install repo as library
         run: |
-          mkdir -p "$HOME/Arduino/libraries"
-          ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
-              # ln -s creates a symlink
+          - mkdir -p "$HOME/Arduino/libraries"
+          - ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
+            # ln -s creates a symlink
 
-      - name: Install repos as symlinks
+      - name: Install repos as copies
         run: |
-              # ln -s "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/"
           cp "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/"
-              # mkdir -p "$PWD/GCA51/utility"
           cp -R "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/"
-              # ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/utility/."
-              # ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_buf.h" "$PWD/GCA51/utility/ln_buf.h"
-              # ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_opc.h" "$PWD/GCA51/utility/ln_opc.h"
-              # ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/utils.h" "$PWD/GCA51/utility/utils.h"
-              # also for rfid2ln:
-              # ln -s "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/rfid2ln.h"
-              # ln -s creates direct symlink
           cp "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/"
           cp "$PWD/GCA51/CustomLibs/rfid2ln/rfid2lnFunc.cpp" "$PWD/GCA51/"
           ls -l "$PWD/GCA51/"
