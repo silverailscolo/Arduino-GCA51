@@ -199,7 +199,7 @@ jobs:
         run: |
           ln -s "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/LocoNet.h"
           mkdir -p "$PWD/GCA51/utility"
-          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/utility/."
+              # ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/utility/."
           ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_buf.h" "$PWD/GCA51/utility/ln_buf.h"
           ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_opc.h" "$PWD/GCA51/utility/ln_opc.h"
           ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/utils.h" "$PWD/GCA51/utility/utils.h"
