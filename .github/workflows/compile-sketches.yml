@@ -190,6 +190,13 @@ jobs:
           ref: master
           path: GCA51/CustomLibs/rfid2ln # path must contain string "Custom"
 
+      - name: Checkout MFRC522 custom library
+        uses: actions/checkout@v4
+        with:
+          repository: miguelbalboa/rfid
+          ref: master
+          path: GCA51/CustomLibs/MFRC522 # path must contain string "Custom"
+
       - name: Install repo as library
         run: |
           mkdir -p "$HOME/Arduino/libraries"
@@ -201,6 +208,7 @@ jobs:
           cp -R "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/"
           cp "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/"
           cp "$PWD/GCA51/CustomLibs/rfid2ln/rfid2lnFunc.cpp" "$PWD/GCA51/"
+
           ls -l "$PWD/GCA51/"
           ls -l "$PWD/GCA51/utility/"
 
