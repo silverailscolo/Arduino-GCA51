@@ -57,7 +57,8 @@ jobs:
 
     env:
       # Libraries to install for all boards
-      UNIVERSAL_LIBRARIES: []
+      # UNIVERSAL_LIBRARIES: |
+      #  - SomeLib
 
       # Sketch paths to compile (recursive) for all boards
       UNIVERSAL_SKETCH_PATHS: |
