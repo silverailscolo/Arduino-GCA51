@@ -115,14 +115,13 @@ jobs:
           ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
 
       - name: Install repos as copies
+          # cp "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/"
+          # cp -R "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/"
+          # cp "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/"
+          # cp "$PWD/GCA51/CustomLibs/rfid2ln/rfid2lnFunc.cpp" "$PWD/GCA51/"
+          # ls -l "$PWD/GCA51/utility/"
         run: |
-          cp "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/"
-          cp -R "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/"
-          cp "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/"
-          cp "$PWD/GCA51/CustomLibs/rfid2ln/rfid2lnFunc.cpp" "$PWD/GCA51/"
-
           ls -l "$PWD/GCA51/"
-          ls -l "$PWD/GCA51/utility/"
 
       - name: Compile sketches
         uses: arduino/compile-sketches@v1
