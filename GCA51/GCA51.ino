@@ -61,7 +61,7 @@
 #define SDA_2_PIN       9                      // The SDA_2 pin provides the Arduino with tag data from Reader 2
 #define LocoLED         4                      // LocoLED lights up when there is LocoNet communication
 #define LocoLED_wait  200                      // LocoLED is always on for 200 msec
-#define PulseTime     300                      // PulseTime for all the Pulse Outputs in msec. - TODO board confg SV0 bit y
+#define PulseTime     300                      // PulseTime for all the Pulse Outputs in msec. - TODO board config SV0 bit y
 #define WaitTime      500                      // Wait Time for all block Inputs in msec.
 #define FlashTime     250                      // Frequency of flasher - TODO board config SV0 bit x
 
