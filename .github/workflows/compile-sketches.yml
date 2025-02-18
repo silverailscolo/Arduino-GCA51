@@ -58,9 +58,7 @@ jobs:
     env:
       # Libraries to install for all boards
       UNIVERSAL_LIBRARIES: |
-        - name: Servo
-        - name: LiquidCrystal
-        - name: CapacitiveSensor
+        - name: SPI
 
       # Sketch paths to compile (recursive) for all boards
       UNIVERSAL_SKETCH_PATHS: |
@@ -72,93 +70,12 @@ jobs:
       matrix:
         board:
           # For testing the sketches
-          - fqbn: arduino:avr:uno
-            usb: false
-            serial1: false
-            starter-kit: true
-            tone: true
-            a5: true
-          # Adding this in addition to the Uno because it has 1.5 kB less available flash
+          # Only test for Nano. It has 1.5 kB less available flash
           - fqbn: arduino:avr:nano
             usb: false
             serial1: false
             starter-kit: false
             tone: true
-            a5: true
-          - fqbn: arduino:avr:leonardo
-            usb: true
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:esp32:nano_nora
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:megaavr:uno2018:mode=off
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:renesas_uno:minima
-            usb: true
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:renesas_uno:unor4wifi
-            usb: true
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:renesas_portenta:portenta_c33
-            usb: true
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:samd:mkrzero
-            usb: true
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:mbed_giga:giga
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:mbed_nano:nano33ble
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:mbed_nano:nanorp2040connect
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            # WiFiNINA library is required to use pins A4-A7.
-            a5: false
-          - fqbn: arduino:mbed_portenta:envie_m7
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:sam:arduino_due_x
-            usb: true
-            serial1: true
-            starter-kit: false
-            # Bug report: https://github.com/arduino/ArduinoCore-sam/issues/24
-            # Change the value to true once it is fixed.
-            tone: false
             a5: true
 
         # Make board type-specific customizations to the matrix jobs
@@ -219,5 +136,8 @@ jobs:
           libraries: |
             ${{ env.UNIVERSAL_LIBRARIES }}
             ${{ matrix.usb-libraries }}
+            - source-url: https://github.com/miguelbalboa/rfid.git
+            - source-url: https://github.com/lmmeng/rfid2ln.git
+            - source-url: https://github.com/mrrwa/LocoNet.git
           sketch-paths: |
             ${{ env.UNIVERSAL_SKETCH_PATHS }}
