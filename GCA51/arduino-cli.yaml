@@ -1,3 +1,0 @@
-# location to store custom libraries on GitHub Arduino compile-sketches action
-directories:
-  user: GCA51/CustomLibs

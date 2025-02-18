@@ -19,9 +19,9 @@ on:
     paths-ignore:
       - "**"
       - "!.github/workflows/compile-sketches.ya?ml"
+        # - "GCA51/CustomLibs/LocoNet/examples/**"
+        # - "GCA51/CustomLibs/rfid2ln/**"
       - "!GCA51/**"
-      - "GCA51/CustomLibs/LocoNet/examples/**"
-      - "GCA51/CustomLibs/rfid2ln/**"
       - "**.adoc"
       - "**.jpg"
       - "**.md"
@@ -31,8 +31,9 @@ on:
     paths-ignore:
       - "**"
       - "!.github/workflows/compile-sketches.ya?ml"
+        # - "GCA51/CustomLibs/LocoNet/examples/**"
+        # - "GCA51/CustomLibs/rfid2ln/**"
       - "!GCA51/**"
-      - "GCA51/CustomLibs/examples/**"
       - "**.adoc"
       - "**.jpg"
       - "**.md"
@@ -56,10 +57,8 @@ jobs:
 
     env:
       # Libraries to install for all boards
-      UNIVERSAL_LIBRARIES: |
-        - name: Servo
-        - name: LiquidCrystal
-        - name: CapacitiveSensor
+      # UNIVERSAL_LIBRARIES: |
+      #  - SomeLib
 
       # Sketch paths to compile (recursive) for all boards
       UNIVERSAL_SKETCH_PATHS: |
@@ -77,135 +76,43 @@ jobs:
             starter-kit: true
             tone: true
             a5: true
-          # Adding this in addition to the Uno because it has 1.5 kB less available flash
+          # Nano has 1.5 kB less available flash
           - fqbn: arduino:avr:nano
             usb: false
             serial1: false
             starter-kit: false
             tone: true
             a5: true
-          - fqbn: arduino:avr:leonardo
-            usb: true
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:esp32:nano_nora
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:megaavr:uno2018:mode=off
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:renesas_uno:minima
-            usb: true
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:renesas_uno:unor4wifi
-            usb: true
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:renesas_portenta:portenta_c33
-            usb: true
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:samd:mkrzero
-            usb: true
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:mbed_giga:giga
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:mbed_nano:nano33ble
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:mbed_nano:nanorp2040connect
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            # WiFiNINA library is required to use pins A4-A7.
-            a5: false
-          - fqbn: arduino:mbed_portenta:envie_m7
-            usb: false
-            serial1: true
-            starter-kit: false
-            tone: true
-            a5: true
-          - fqbn: arduino:sam:arduino_due_x
-            usb: true
-            serial1: true
-            starter-kit: false
-            # Bug report: https://github.com/arduino/ArduinoCore-sam/issues/24
-            # Change the value to true once it is fixed.
-            tone: false
-            a5: true
-
-        # Make board type-specific customizations to the matrix jobs
-        include:
-          - board:
-              # Boards with Keyboard+Mouse library compatibility
-              usb: true
-            # Install these libraries in addition to the ones defined by env.UNIVERSAL_LIBRARIES
-            usb-libraries: |
-              - name: Keyboard
-              - name: Mouse
-            # Compile these sketches in addition to the ones defined by env.UNIVERSAL_SKETCH_PATHS
 
     steps:
       - name: Checkout GCA51
         uses: actions/checkout@v4
 
-      - name: Checkout LocoNet custom library
-        uses: actions/checkout@v4
-        with:
-          repository: mrrwa/LocoNet
-          ref: master
-          path: GCA51/CustomLibs/LocoNet # path must contain string "Custom"
+#      - name: Checkout LocoNet custom library
+#        uses: actions/checkout@v4
+#        with:
+#          repository: mrrwa/LocoNet
+#          ref: master
+#          path: GCA51/CustomLibs/LocoNet # path must contain string "Custom"
 
-      - name: Checkout rfid2ln custom library
-        uses: actions/checkout@v4
-        with:
-          repository: lmmeng/rfid2ln
-          ref: master
-          path: GCA51/CustomLibs/rfid2ln # path must contain string "Custom"
+#      - name: Checkout rfid2ln custom library
+#        uses: actions/checkout@v4
+#        with:
+#          repository: lmmeng/rfid2ln
+#          ref: master
+#          path: GCA51/CustomLibs/rfid2ln # path must contain string "Custom"
 
-      - name: Install repo as library
-        run: |
-          mkdir -p "$HOME/Arduino/libraries"
-          ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
-              # ln -s creates a symlink
+#      - name: Checkout MFRC522 custom library
+#        uses: actions/checkout@v4
+#        with:
+#          repository: miguelbalboa/rfid
+#          ref: master
+#          path: GCA51/CustomLibs/MFRC522 # path must contain string "Custom"
 
-      - name: Install repos as symlinks
-        run: |
-          ln -s "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/LocoNet.h"
-          mkdir -p "$PWD/GCA51/utility"
-          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/utility/."
-          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_buf.h" "$PWD/GCA51/utility/ln_buf.h"
-          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/ln_opc.h" "$PWD/GCA51/utility/ln_opc.h"
-          ln -s "$PWD/GCA51/CustomLibs/LocoNet/utility/utils.h" "$PWD/GCA51/utility/utils.h"
-              # also for rfid2ln:
-          ln -s "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/rfid2ln.h"
-              # ln -s creates direct symlink
+#      - name: Install repo as library
+#        run: |
+#          mkdir -p "$HOME/Arduino/libraries"
+#          ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
 
       - name: Compile sketches
         uses: arduino/compile-sketches@v1
@@ -214,5 +121,8 @@ jobs:
           libraries: |
             ${{ env.UNIVERSAL_LIBRARIES }}
             ${{ matrix.usb-libraries }}
+            - source-url: https://github.com/miguelbalboa/rfid.git
+            - source-url: https://github.com/lmmeng/rfid2ln.git
+            - source-url: https://github.com/mrrwa/LocoNet.git
           sketch-paths: |
             ${{ env.UNIVERSAL_SKETCH_PATHS }}
