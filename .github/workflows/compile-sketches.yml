@@ -88,40 +88,31 @@ jobs:
       - name: Checkout GCA51
         uses: actions/checkout@v4
 
-      - name: Checkout LocoNet custom library
-        uses: actions/checkout@v4
-        with:
-          repository: mrrwa/LocoNet
-          ref: master
-          path: GCA51/CustomLibs/LocoNet # path must contain string "Custom"
+#      - name: Checkout LocoNet custom library
+#        uses: actions/checkout@v4
+#        with:
+#          repository: mrrwa/LocoNet
+#          ref: master
+#          path: GCA51/CustomLibs/LocoNet # path must contain string "Custom"
 
-      - name: Checkout rfid2ln custom library
-        uses: actions/checkout@v4
-        with:
-          repository: lmmeng/rfid2ln
-          ref: master
-          path: GCA51/CustomLibs/rfid2ln # path must contain string "Custom"
+#      - name: Checkout rfid2ln custom library
+#        uses: actions/checkout@v4
+#        with:
+#          repository: lmmeng/rfid2ln
+#          ref: master
+#          path: GCA51/CustomLibs/rfid2ln # path must contain string "Custom"
 
-      - name: Checkout MFRC522 custom library
-        uses: actions/checkout@v4
-        with:
-          repository: miguelbalboa/rfid
-          ref: master
-          path: GCA51/CustomLibs/MFRC522 # path must contain string "Custom"
+#      - name: Checkout MFRC522 custom library
+#        uses: actions/checkout@v4
+#        with:
+#          repository: miguelbalboa/rfid
+#          ref: master
+#          path: GCA51/CustomLibs/MFRC522 # path must contain string "Custom"
 
-      - name: Install repo as library
-        run: |
-          mkdir -p "$HOME/Arduino/libraries"
-          ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
-
-      - name: Install repos as copies
-          # cp "$PWD/GCA51/CustomLibs/LocoNet/LocoNet.h" "$PWD/GCA51/"
-          # cp -R "$PWD/GCA51/CustomLibs/LocoNet/utility/" "$PWD/GCA51/"
-          # cp "$PWD/GCA51/CustomLibs/rfid2ln/rfid2ln.h" "$PWD/GCA51/"
-          # cp "$PWD/GCA51/CustomLibs/rfid2ln/rfid2lnFunc.cpp" "$PWD/GCA51/"
-          # ls -l "$PWD/GCA51/utility/"
-        run: |
-          ls -l "$PWD/GCA51/"
+#      - name: Install repo as library
+#        run: |
+#          mkdir -p "$HOME/Arduino/libraries"
+#          ln -s "$PWD/GCA51/CustomLibs/" "$HOME/Arduino/libraries/."
 
       - name: Compile sketches
         uses: arduino/compile-sketches@v1
