@@ -57,8 +57,7 @@ jobs:
 
     env:
       # Libraries to install for all boards
-      UNIVERSAL_LIBRARIES: |
-        - name: SPI.h
+      UNIVERSAL_LIBRARIES: []
 
       # Sketch paths to compile (recursive) for all boards
       UNIVERSAL_SKETCH_PATHS: |

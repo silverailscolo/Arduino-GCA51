@@ -4,6 +4,6 @@
 # name: 50
 # description: 100
 
-- name: "assigned"
+- name: assigned
   color: "c0c0c0"
   description: Will be worked on
