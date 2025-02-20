@@ -161,23 +161,23 @@ typedef struct CNFG_OPTIONS
   char *description;                    // max length of description = 10 in getConfig(i)
 };
 
-const CNFG_OPTIONS configOptions[16] = {
-  { .code = 15, .description = "tggl"},             // [0] inputs:
-  { .code = 23, .description = "to"},               // [1] single contact "normal" turnout feedback
-  { .code = 31, .description = "blck"},             // [2]
-  { .code = 39, .description = "btn ind"},          // [3]
-  { .code = 47, .description = "btn"},              // [4]
-  { .code = 55, .description = "to ct"},            // [5] 2 contacts turnout feedback, for 2: .value2 bits 4-7 = 3
-  { .code = 91, .description = "blck del"},         // [6]
-  { .code = 27, .description = "unused"},           // [7] outputs:
-  { .code = 128, .description = "off"},             // [8] for 1: .value2 bits 4-7 (JMRI HDL LocoIO Value2A) = 1
-  { .code = 129, .description = "on"},              // [9] for 2: .value2 bits 4-7 = 3
-  { .code = 136, .description = "pls sft"},         // [10]
-  { .code = 140, .description = "pls hrd"},         // [11]
-  { .code = 144, .description = "off x"},           // [12]
-  { .code = 145, .description = "on x"},            // [13]
-  { .code = 192, .description = "blck"},            // [14]
-  { .code = 208, .description = "blck x"}           // [15]
+const PROGMEM CNFG_OPTIONS configOptions[16] = {
+  {15, "tggl"},             // [0] inputs:
+  {23, "to"},               // [1] single contact "normal" turnout feedback
+  {31, "blck"},             // [2]
+  {39, "btn ind"},          // [3]
+  {47, "btn"},              // [4]
+  {55, "to ct"},            // [5] 2 contacts turnout feedback, for 2: .value2 bits 4-7 = 3
+  {91, "blck del"},         // [6]
+  {27, "unused"},           // [7] outputs:
+  {128, "off"},             // [8] for 1: .value2 bits 4-7 (JMRI HDL LocoIO Value2A) = 1
+  {129, "on"},              // [9] for 2: .value2 bits 4-7 = 3
+  {136, "pls sft"},         // [10]
+  {140, "pls hrd"},         // [11]
+  {144, "off x"},           // [12]
+  {145, "on x"},            // [13]
+  {192, "blck"},            // [14]
+  {208, "blck x"},          // [15]
 };
 
 // Timers for each input configured as "delayed"
