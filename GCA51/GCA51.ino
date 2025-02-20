@@ -258,8 +258,8 @@ void CalculateAddress()
   // GCA51 ports 2-7 not available
   for (n = 2; n < 8; n++)
   {
-   softwareAddress[n] = 255;
-   Serial.print("- Port "); Serial.print(n); Serial.println(" N/A");
+    softwareAddress[n] = 255;
+    Serial.print("- Port "); Serial.print(n); Serial.println(" N/A");
   }
 
   // I/O ports 8-15
@@ -397,7 +397,7 @@ void setup()
   uint32_t uiStartTimer;
   uint16_t uiElapsedDelay;
   uint16_t uiSerialOKDelay = 5000;
-  int i, n;
+  uint8_t i, n;
   pinMode (LocoLED, OUTPUT);                    // LocoLED pin to indicate LocoNet communication
 
   // start_setup();  // Start values of the board in LocoGCA51.cpp <<<< Lib not available, copied from latest GCA50a
@@ -424,71 +424,81 @@ void setup()
   LocoNet.init(LN_TX_PIN); // Use explicit naming of the Tx Pin to avoid confusion
   sv.init(MANUF_ID, BOARD_TYPE, 1, 1); // to see if needed just once (saved in EEPROM)
 
-  // Check for a valid config
-  if (svtable.svt.vrsion != VERSION || svtable.svt.addr_low < 1 || svtable.svt.addr_low > 240 || svtable.svt.addr_high < 1 || svtable.svt.addr_high > 100 )
-  {
-    svtable.svt.vrsion = VERSION;
-    svtable.svt.addr_low = ucBoardAddrLo;
-    svtable.svt.addr_high = ucBoardAddrHi;
-    EEPROM.write(100, VERSION);
-    EEPROM.write(1, svtable.svt.addr_low);
-    EEPROM.write(2, svtable.svt.addr_high);
-  }
-  Serial.print("Module lo/hi address: "); Serial.print(svtable.svt.addr_low); Serial.print("/"); Serial.println(svtable.svt.addr_high);
-
   // Load config from EEPROM
   for (n = 0; n < 51; n++) {
     svtable.data[n] = EEPROM.read(n);  // Read the values of SV0 till SV51. The values in EEPROM were OK or standardised in start_setup()
   }
 
-  CalculateAddress();                  // Calculate software addresses of pins and store in global variable softwareAddress[16]. Also prints config to Console
-
-  // load board settings from SV0
-  // from Public_Domain_HDL_LocoIO definition:
-  //    <variable CV="0" mask="VVVVXXXX" item="Blink Rate" default="0"> DONE, see blinkRate
-  //        <label>Blink Rate:</label> 0=slow to 15=fast
-  //    <variable CV="0" mask="XXXVXXXX" item="Board Active High" default="0"> ALWAYS ACTIVE LOW - NO CONFIG
-  //        <tooltip>Default: unselected = Active Low</tooltip>
-  //    <variable CV="0" mask="XXXXVVXX" item="Action Mode" default="0"> NOT USED - ALWAYS 0
-  //    <variable CV="0" mask="XXXXXXVX" item="Alternate Mode" default="0">
-  //        0 = Fixed; 1 = Alternating
-  //        <tooltip>Button sends alternating or fixed code</tooltip>
-  //    <variable CV="0" mask="XXXXXXXV" item="Port Refresh" default="0">
-
-  blinkRate = (svtable.data[0] >> 4);  // actual blinkPeriod was matched to an HDL LocoIO
-  blinkDuration = 1000 - 30 * blinkRate; // use 50% of blinkPeriod. See also FlashTime const
-  Serial.print("Board blink rate: "); Serial.print(blinkRate); Serial.print( " blink period: "); Serial.print(blinkDuration * 2); Serial.println("ms");
-
-  alternateMode = svtable.data[0] & 0x2;
-  portRefresh = svtable.data[0] & 0x1;
-
-  Serial.println("LocoIO functions compatible to v148/149");
-
-  // Configure I/O pins and give outputs a start value
-#ifdef DEBUG
-  Serial.println("Initializing pins...");
-#endif
-  for (n = 8; n < 16; n++)            // The first 8 I/O ports are already set and are not available to users, except to set addresses of ports 1 and 2 (RFID sensor ports)
-    // The actual hardware Nano pin numbers are declared in the global variable pinMap[]
+  // Check for a valid config
+  if (svtable.svt.vrsion != VERSION || svtable.svt.addr_low < 1 || svtable.svt.addr_low > 240 || svtable.svt.addr_high < 1 || svtable.svt.addr_high > 1 )
   {
-    if (bitRead(svtable.svt.pincfg[n].cnfg, 7))                                         // if cnfg bit 7 == 1, pin is an Output
-    {
-      pinMode(pinMap[n - 8], OUTPUT);
-      if (bitRead(svtable.svt.pincfg[n].cnfg, 0)) digitalWrite(pinMap[n - 8], HIGH);    // if cnfg bit 0 == 1 the output is HIGH at startup
-      else digitalWrite(pinMap[n - 8], LOW);                                            // else the output is LOW at startup
+    svtable.svt.vrsion = VERSION;
+    svtable.svt.addr_low = ucBoardAddrLo;
+    svtable.svt.addr_high = ucBoardAddrHi;
+    EEPROM.write(0, 0); // HDL LocoIO compatible board config (refresh at power on, blink rate etc.)
+    EEPROM.write(100, VERSION);
+    EEPROM.write(1, svtable.svt.addr_low);
+    EEPROM.write(2, svtable.svt.addr_high);
 
-      if (bitRead(svtable.svt.pincfg[n].cnfg, 4)) blinkState[n] = 1;                    // start blink as ON
-      else blinkState[n] = 255; // uint8_t off marker
-    }
-    else                                                                                // if cnfg bit 7 is 0, pin is an Input
-    {
-      pinMode(pinMap[n - 8], INPUT_PULLUP);
-      bitWrite(svtable.svt.pincfg[n].value2, 4, 1);  // block detector, no pulse contact
-    }
-    //inpTimer[n] = 1000; // TODO get the exact bit for each port from svtable.svt.data[n]
+#ifdef DEBUG
+    Serial.println("Version mismatch; EEPROM reset");
+#endif
 
-    InitialiseInterrupt();                           // (only) inputs will get an interrupt
   }
+  else
+  {
+    //Configure I/O
+
+    CalculateAddress(); // Calculate software addresses of pins and store in global variable softwareAddress[16]. Also prints config to Console
+
+    // load board settings from SV0
+    // from Public_Domain_HDL_LocoIO definition:
+    //    <variable CV="0" mask="VVVVXXXX" item="Blink Rate" default="0"> DONE, see blinkRate
+    //        <label>Blink Rate:</label> 0=slow to 15=fast
+    //    <variable CV="0" mask="XXXVXXXX" item="Board Active High" default="0"> ALWAYS ACTIVE LOW - NO CONFIG
+    //        <tooltip>Default: unselected = Active Low</tooltip>
+    //    <variable CV="0" mask="XXXXVVXX" item="Action Mode" default="0"> NOT USED - ALWAYS 0
+    //    <variable CV="0" mask="XXXXXXVX" item="Alternate Mode" default="0">
+    //        0 = Fixed; 1 = Alternating
+    //        <tooltip>Button sends alternating or fixed code</tooltip>
+    //    <variable CV="0" mask="XXXXXXXV" item="Port Refresh" default="0">
+
+    blinkRate = (svtable.data[0] >> 4);  // actual blinkPeriod was matched to an HDL LocoIO
+    blinkDuration = 1000 - 30 * blinkRate; // use 50% of blinkPeriod. See also FlashTime const
+    Serial.print("Board blink rate: "); Serial.print(blinkRate); Serial.print( " blink period: "); Serial.print(blinkDuration * 2); Serial.println("ms");
+
+    alternateMode = svtable.data[0] & 0x2;
+    portRefresh = svtable.data[0] & 0x1;
+
+    Serial.println("LocoIO functions compatible to v148/149");
+
+    // Configure I/O pins and give outputs a start value
+#ifdef DEBUG
+    Serial.println("Initializing pins...");
+#endif
+    for (n = 8; n < 16; n++) // The first 8 I/O ports are already set and are not available to users, except to set addresses of ports 1 and 2 (RFID sensor ports)
+      // The actual hardware Nano pin numbers are declared in the global variable pinMap[]
+    {
+      if (bitRead(svtable.svt.pincfg[n].cnfg, 7))                                         // if cnfg bit 7 == 1, pin is an Output
+      {
+        pinMode(pinMap[n - 8], OUTPUT);
+        if (bitRead(svtable.svt.pincfg[n].cnfg, 0)) digitalWrite(pinMap[n - 8], HIGH);    // if cnfg bit 0 == 1 the output is HIGH at startup
+        else digitalWrite(pinMap[n - 8], LOW);                                            // else the output is LOW at startup
+
+        if (bitRead(svtable.svt.pincfg[n].cnfg, 4)) blinkState[n] = 1;                    // start blink as ON
+        else blinkState[n] = 255; // uint8_t off marker
+      }
+      else                                                                                // if cnfg bit 7 is 0, pin is an Input
+      {
+        pinMode(pinMap[n - 8], INPUT_PULLUP);
+        bitWrite(svtable.svt.pincfg[n].value2, 4, 1);  // block detector, no pulse contact
+      }
+      inpTimer[n] = 0; // timer initialization
+
+      InitialiseInterrupt();                           // (only) inputs will get an interrupt
+    }
+  }
+  Serial.print("Module lo/hi address: "); Serial.print(svtable.svt.addr_low); Serial.print("/"); Serial.println(svtable.svt.addr_high);
 
   // ********************************** init RFID **********************************
 
