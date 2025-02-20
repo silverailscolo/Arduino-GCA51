@@ -162,14 +162,14 @@ typedef struct CNFG_OPTIONS
 };
 
 const PROGMEM CNFG_OPTIONS configOptions[16] = {
-  {15, "tggl"},             // [0] inputs:
-  {23, "to"},               // [1] single contact "normal" turnout feedback
-  {31, "blck"},             // [2]
-  {39, "btn ind"},          // [3]
-  {47, "btn"},              // [4]
-  {55, "to ct"},            // [5] 2 contacts turnout feedback, for 2: .value2 bits 4-7 = 3
-  {91, "blck del"},         // [6]
-  {27, "unused"},           // [7] outputs:
+  {0, "unused"},            // [0] inputs:
+  {15, "tggl"},             // [1]
+  {23, "to"},               // [2] single contact "normal" turnout feedback
+  {31, "blck"},             // [3]
+  {39, "btn ind"},          // [4]
+  {47, "btn"},              // [5]
+  {55, "to ct"},            // [6] 2 contacts turnout feedback, for 2: .value2 bits 4-7 = 3
+  {27, "blck del"},         // [7] outputs:
   {128, "off"},             // [8] for 1: .value2 bits 4-7 (JMRI HDL LocoIO Value2A) = 1
   {129, "on"},              // [9] for 2: .value2 bits 4-7 = 3
   {136, "pls sft"},         // [10]
@@ -386,6 +386,7 @@ char *getConfig(int pin)
   } else {
     return ("not found");
   }
+  free(desc);
 }
 
 
