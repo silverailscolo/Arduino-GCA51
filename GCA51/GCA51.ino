@@ -151,7 +151,7 @@ union SV_DATA                           // Union to access the data with the str
 };
 SV_DATA svtable;                        // Union declaration svtable
 
-const uint8_t rfidOptions[2] = {31, 91};
+const uint8_t rfidOptions[2] = {27, 31};
 
 // const uint8_t configCodes[16] = {15,23,27,31,91,39,47,55,128,129,136,140,144,145,192,208}; // backup for configOptions lookup, requires more mem
 
@@ -165,11 +165,11 @@ const PROGMEM CNFG_OPTIONS configOptions[16] = {
   {0, "unused"},            // [0] inputs:
   {15, "tggl"},             // [1]
   {23, "to"},               // [2] single contact "normal" turnout feedback
+  {27, "blck del"},         // [7]
   {31, "blck"},             // [3]
   {39, "btn ind"},          // [4]
-  {47, "btn"},              // [5]
+  {47, "btn"},              // [5] outputs:
   {55, "to ct"},            // [6] 2 contacts turnout feedback, for 2: .value2 bits 4-7 = 3
-  {27, "blck del"},         // [7] outputs:
   {128, "off"},             // [8] for 1: .value2 bits 4-7 (JMRI HDL LocoIO Value2A) = 1
   {129, "on"},              // [9] for 2: .value2 bits 4-7 = 3
   {136, "pls sft"},         // [10]
@@ -390,8 +390,7 @@ char *getConfig(int pin)
 }
 
 
-// *************** SETUP *************************
-
+/********************** SETUP *************************/
 void setup()
 {
   uint32_t uiStartTimer;
