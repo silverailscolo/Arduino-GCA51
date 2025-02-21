@@ -68,16 +68,11 @@
 uint8_t ucBoardAddrHi = 1;                     // board address high; always 1 because GCA51 has no room for high byte in RFID-7 message
 uint8_t ucBoardAddrLo = 88;                    // board address low; default 88
 
-//uint8_t NR_OF_RFID_PORTS = 2;                // GCA51, same as default set in rfid2ln lib, but override here for future new hardware?
+//uint8_t NR_OF_RFID_PORTS = 2;                // GCA51, same as default set in rfid2ln lib, override here for future new hardware?
 unsigned long resetUid[NR_OF_RFID_PORTS];      // stores the timestamp when the old UID from Reader[i] was stored
 
 MFRC522 mfrc522[NR_OF_RFID_PORTS];
-#if NR_OF_RFID_PORTS == 1
-uint8_t boardVer[] = "RFID2LN Vxx SINGLE";
-#elif NR_OF_RFID_PORTS == 2
-uint8_t boardVer[] = "RFID2LN Vxx MULTI";
-#endif
-char verLen = sizeof(boardVer);
+
 #define INFORMATPOWERON
 
 #define ELEMENTCOUNT(x) (sizeof(x) / sizeof(int)) // (sizeof(x[0]) / sizeof(int)
@@ -138,16 +133,16 @@ struct PIN_CFG
 // Memory map exchanged with SV read and write commands ( http://wiki.rocrail.net/doku.php?id=lnsv-en )
 struct SV_TABLE
 {
-  uint8_t vrsion;
+  uint8_t board_cnfg;
   uint8_t addr_low;
   uint8_t addr_high;
-  PIN_CFG pincfg[16];                   // pincfg[16] has all the hardware / software settings of the 8 I/O ports: cnfg, value1 and value2
+  PIN_CFG pincfg[16];                   // pincfg[16] has all the hardware/software settings of the 8 I/O ports: cnfg, value1, value2
 };
 
 union SV_DATA                           // Union to access the data with the struct or by index
 {
   SV_TABLE svt;
-  uint8_t data[51];
+  uint8_t data[100];
 };
 SV_DATA svtable;                        // Union declaration svtable
 
@@ -195,7 +190,7 @@ boolean portRefresh = false;          // TODO send update of all input states wh
 
 // functions common with GCA51a LocoIO are in GCA51Func.cpp
 // extern boolean processPeerPacket();
-// extern void sendPeerPacket(uint8_t p0, uint8_t p1, uint8_t p2); // added LED blink so must use a local copy of GCA50a method
+// extern void sendPeerPacket(uint8_t p0, uint8_t p1, uint8_t p2); // added LocoLED blink, so must override GCA50a method
 // extern void notifySwitchRequest(uint16_t Address, uint8_t Output, uint8_t Direction); // idem
 
 MFRC522::MIFARE_Key key;
@@ -248,7 +243,7 @@ void CalculateAddress()
       Serial.print ("- RFID Reader [RC522-"); Serial.print (n + 1); Serial.print ("] input, address: "); Serial.print(softwareAddress[n], DEC);
       Serial.print(" (cfg: "); Serial.print(svtable.svt.pincfg[n].cnfg);
       // Serial.print(" ");
-      // Serial.print(getConfig(svtable.svt.pincfg[n].cnfg)); // adds pin config description - TODO fif, doesn't return correct char[]
+      // Serial.print(getConfig(svtable.svt.pincfg[n].cnfg)); // adds pin config description - TODO fix, doesn't return correct char[]
       Serial.println(")");
     } else {
       Serial.print ("- RFID Reader port"); Serial.print (n); Serial.print(" should be configured as Input - Block Detector - Active Low (- Delayed optional). Skipping. Err: config="); Serial.println(svtable.svt.pincfg[n].cnfg);
@@ -421,34 +416,40 @@ void setup()
 
   // Initialize the LocoNet interface
   LocoNet.init(LN_TX_PIN); // Use explicit naming of the Tx Pin to avoid confusion
-  sv.init(MANUF_ID, BOARD_TYPE, 1, 1); // to see if needed just once (saved in EEPROM)
 
   // Load config from EEPROM
-  for (n = 0; n < 51; n++) {
-    svtable.data[n] = EEPROM.read(n);  // Read the values of SV0 till SV51. The values in EEPROM were OK or standardised in start_setup()
-  }
-
-  // Check for a valid config
-  if (svtable.svt.vrsion != VERSION || svtable.svt.addr_low < 1 || svtable.svt.addr_low > 240 || svtable.svt.addr_high < 1 || svtable.svt.addr_high > 1 )
-  {
-    svtable.svt.vrsion = VERSION;
-    svtable.svt.addr_low = ucBoardAddrLo;
-    svtable.svt.addr_high = ucBoardAddrHi;
-    EEPROM.write(0, 0); // HDL LocoIO compatible board config (refresh at power on, blink rate etc.)
-    EEPROM.write(100, VERSION);
-    EEPROM.write(1, svtable.svt.addr_low);
-    EEPROM.write(2, svtable.svt.addr_high);
-
+  svtable.svt.board_cnfg = EEPROM.read(0); // not used but is it a memory spacer?
+  svtable.svt.addr_low = EEPROM.read(1);
+  svtable.svt.addr_high = EEPROM.read(2);
 #ifdef DEBUG
-    Serial.println("Version mismatch; EEPROM reset");
+  Serial.println("Start reading EEPROM into svtable.data");
+  for (n = 0; n < 101; n++) {
+    svtable.data[n] = EEPROM.read(n);  // Read the values of SV0 till SV100. The values in EEPROM were OK or standardised in start_setup()
+    Serial.print(n); Serial.print(": "); Serial.println(svtable.data[n]);
+  }
+  // BUG: svtable.svt.board_cnfg AKA .vrsion is always 0. Why? Because is overlaps with board_cnfg SV0
 #endif
 
+  // Check for a valid config
+  if (svtable.data[100] != VERSION || svtable.svt.addr_low < 1 || svtable.svt.addr_low > 240 || svtable.svt.addr_high != 1 ) // GCA51 addr_high fixed 1
+  {
+    svtable.data[100] = VERSION;
+    svtable.svt.addr_low = ucBoardAddrLo;
+    svtable.svt.addr_high = ucBoardAddrHi;
+    EEPROM.write(0, 0); // HDL LocoIO compatible board config (stores refresh at power on, blink rate etc.)
+    EEPROM.write(1, svtable.svt.addr_low);
+    EEPROM.write(2, svtable.svt.addr_high);
+    EEPROM.write(99, 0); // init JMRI LocoIO decoder storage of o-bits
+    EEPROM.write(100, VERSION); // HDL LocoIO compatible SV100, readOnly from LocoNet
+    // ReadCV returns offset x, x+1 and x+2 so we simulate returned values in processPeerPacket()
+
+    Serial.println("Version mismatch; EEPROM reset");
   }
   else
   {
     //Configure I/O
 
-    CalculateAddress(); // Calculate software addresses of pins and store in global variable softwareAddress[16]. Also prints config to Console
+    CalculateAddress(); // Calculate software addresses of pins and store in global variable softwareAddress[16]. Prints config to Console
 
     // load board settings from SV0
     // from Public_Domain_HDL_LocoIO definition:
@@ -464,12 +465,12 @@ void setup()
 
     blinkRate = (svtable.data[0] >> 4);  // actual blinkPeriod was matched to an HDL LocoIO
     blinkDuration = 1000 - 30 * blinkRate; // use 50% of blinkPeriod. See also FlashTime const
-    Serial.print("Board blink rate: "); Serial.print(blinkRate); Serial.print( " blink period: "); Serial.print(blinkDuration * 2); Serial.println("ms");
+    Serial.print("Board blink rate: "); Serial.print(blinkRate); Serial.print( ". blink period: "); Serial.print(blinkDuration * 2); Serial.println(" ms");
 
     alternateMode = svtable.data[0] & 0x2;
     portRefresh = svtable.data[0] & 0x1;
 
-    Serial.println("LocoIO functions compatible to v148/149");
+    Serial.println("LocoIO functions compatible with v148/149");
 
     // Configure I/O pins and give outputs a start value
 #ifdef DEBUG
@@ -557,8 +558,6 @@ void setup()
   } //for(uint8_t i = 0
 
   if (bSerialOk) {
-    Serial.print(F("Nr. of active RFID readers: "));
-    Serial.println(uiActReaders);
     Serial.println(F("************************************************"));
   }
 
@@ -598,7 +597,7 @@ void loop()
 
     if (!LocoNet.processSwitchSensorMessage(LnPacket)) // check for PEER packet if this packet was not a Switch or Sensor Message
     {
-      processPeerPacket();                             // from NCaldes GCA50a
+      processPeerPacket();                             // method copied from NCaldes GCA50a
     }
   }
 
@@ -824,7 +823,7 @@ void loop()
   if (uiBufCnt > 0)
   {
     LocoNet_communication(1); // turn on onboard LocoLED - blink 1x + sensor change
-    LN_STATUS lnSent = LocoNet.send( &SendPacketSensor[uiBufRdIdx], LN_BACKOFF_MAX - (ucBoardAddrLo % 10)); // trying to differentiate the ln answer time
+    LN_STATUS lnSent = LocoNet.send( &SendPacketSensor[uiBufRdIdx], LN_BACKOFF_MAX - (ucBoardAddrLo % 10)); // trying to differentiate the ln reply time
     if (lnSent = LN_DONE) // message sent OK
     {
 #ifdef DEBUG
@@ -948,10 +947,10 @@ void setMessageHeader(uint8_t rfIndex, uint8_t pIndex)
 
 boolean processPeerPacket()
 {
-  // Check is a OPC_PEER_XFER message
+  // Check it is an OPC_PEER_XFER message
   if (LnPacket->px.command != OPC_PEER_XFER) return (false);
 
-  //Check is my destination
+  //Check it is my destination
   if ((LnPacket->px.dst_l != 0 || LnPacket->px.d5 != 0) &&
       (LnPacket->px.dst_l != 0x7f || LnPacket->px.d5 != svtable.svt.addr_high) &&
       (LnPacket->px.dst_l != svtable.svt.addr_low || LnPacket->px.d5 != svtable.svt.addr_high))
@@ -978,22 +977,37 @@ boolean processPeerPacket()
   bitWrite(LnPacket->px.d7, 7, bitRead(LnPacket->px.pxct2, 2));
   bitWrite(LnPacket->px.d8, 7, bitRead(LnPacket->px.pxct2, 3));
 
-  //OPC_PEER_XFER D1 -> Command (1 =SV write, 2 = SV read)
-  //OPC_PEER_XFER D2 -> Register to read or write
-  if (LnPacket->px.d1 == 2)
+  //OPC_PEER_XFER D1 -> Command (1=SV_write 2=SV_read)
+  //OPC_PEER_XFER D2 -> The Register (SV) to read or write
+
+  if (LnPacket->px.d1 == 2) // Read
   {
 #ifdef DEBUG
     Serial.print("READ "); Serial.print(LnPacket->px.d2); Serial.print(" "); Serial.print(LnPacket->px.d2 + 1); Serial.print(" "); Serial.println(LnPacket->px.d2 + 2);
 #endif
-    sendPeerPacket(svtable.data[LnPacket->px.d2], svtable.data[LnPacket->px.d2 + 1], svtable.data[LnPacket->px.d2 + 2]);
-    return (true);
+
+    if (LnPacket->px.d2 >= 0) // SV0 contains board config, SV100 is highest SV on LocoIO/GCA51
+    {
+      if (LnPacket->px.d2 < 99)
+      {
+        sendPeerPacket(svtable.data[LnPacket->px.d2], svtable.data[LnPacket->px.d2 + 1], svtable.data[LnPacket->px.d2 + 2]);
+        return (true);
+      } else if (LnPacket->px.d2 == 99) { // A readReply always includes the d2+1 and d2+2 values, so to read SV100 we must add 2 fake values
+        sendPeerPacket(svtable.data[LnPacket->px.d2], svtable.data[LnPacket->px.d2 + 1], 0);
+        return (true);
+      } else if (LnPacket->px.d2 == 100) {
+        sendPeerPacket(svtable.data[LnPacket->px.d2], 0, 0);
+        return (true);
+      } else {
+        Serial.print("Read offset is outside valid range (0-100): "); Serial.println(LnPacket->px.d2);
+      }
+    }
   }
 
-  // Write command
-  if (LnPacket->px.d1 == 1)
+  if (LnPacket->px.d1 == 1) // Write
   {
 
-    if (LnPacket->px.d2 > 0) // SV 0 contains the program version - TODO fix to SV100
+    if (LnPacket->px.d2 >= 0 && LnPacket->px.d2 < 100) // SV 0 contains board config, SV100 (version) is read only
     {
       //Store data
       svtable.data[LnPacket->px.d2] = LnPacket->px.d4;
@@ -1005,9 +1019,11 @@ boolean processPeerPacket()
       Serial.print(LnPacket->px.d4, HEX); Serial.print(" | ");
       Serial.println(LnPacket->px.d4, BIN);
 #endif
+    } else {
+      Serial.print("Write offset is outside valid range (0-99): "); Serial.println(LnPacket->px.d2);
     }
 
-    // Answer packet
+    // Reply packet
     LocoNet_communication(1); // turn on LocoLED
     sendPeerPacket(0x00, 0x00, LnPacket->px.d4);
 #ifdef DEBUG
@@ -1031,7 +1047,7 @@ void sendPeerPacket(uint8_t p0, uint8_t p1, uint8_t p2)
   txPacket.px.pxct1 = 0x00;
   txPacket.px.d1 = LnPacket->px.d1;                       // Original command
   txPacket.px.d2 = LnPacket->px.d2;                       // SV requested
-  txPacket.px.d3 = svtable.svt.vrsion;
+  txPacket.px.d3 = svtable.data[100];
   txPacket.px.d4 = 0x00;
   txPacket.px.pxct2 = 0x00;
   txPacket.px.d5 = svtable.svt.addr_high;                 // SOURCE high address
