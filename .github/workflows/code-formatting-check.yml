@@ -21,8 +21,8 @@ jobs:
       - uses: actions/checkout@v6
       - uses: arduino/arduino-lint-action@v2
         with:
-          project-type: sketch
-          # library-manager: false
+          # project-type: sketch
+          library-manager: false
           # compliance: strict
 
 #  check-formatting:
