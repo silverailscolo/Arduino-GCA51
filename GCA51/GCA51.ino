@@ -53,6 +53,7 @@
 #include "rfid2ln.h"
 #include <MFRC522.h>
 #include <Arduino.h>
+#include <SerialCommand.h>
 
 #define VERSION       151                      // 106 for GCA50a LocoIO (v148) functions, must be type int
 //#define DEBUG                                  // Uncomment this line to debug through the serial monitor
@@ -177,7 +178,7 @@ const PROGMEM CNFG_OPTIONS configOptions[16] = {
   {208, "blck x"},          // [15]
 };
 
-// Timers for each input configured as "delayed"
+// Timers for each input that is configured as "delayed"
 // inputs defined as "delayed" will keep the signal high at least 2 seconds (why 2s? LocoIO docs says: 1-2*blinkDuration)
 unsigned long inpTimer[16];            // block delay per cnfg port
 uint8_t blinkRate = 0;                 // default board setting for blinking rate of output ports
@@ -196,6 +197,8 @@ boolean portRefresh = false;          // TODO send update of all input states wh
 // extern void notifySwitchRequest(uint16_t Address, uint8_t Output, uint8_t Direction); // idem
 
 MFRC522::MIFARE_Key key;
+
+SerialCommand SCmd;   // The SerialCommand object
 
 // ********************************** Utility methods ***************************************
 
@@ -286,7 +289,7 @@ void CalculateAddress()
         Serial.print(" (cfg: ");
         Serial.print(svtable.svt.pincfg[n].cnfg);
         // Serial.print(" ");
-        // Serial.print(getConfig(svtable.svt.pincfg[n].cnfg)); // adds pin config description - TDO fix
+        // Serial.print(getConfig(svtable.svt.pincfg[n].cnfg)); // adds pin config description - TODO fix
         // add no. 1/2 output pair = .value2 bits 4-7
         int logic = svtable.svt.pincfg[n].value2 & 0xF0;
         if (logic == 3)
@@ -502,6 +505,14 @@ void setup()
   }
   Serial.print("Module lo/hi address: "); Serial.print(svtable.svt.addr_low); Serial.print("/"); Serial.println(svtable.svt.addr_high);
 
+  // Setup callbacks for SerialCommand commands
+  SCmd.addCommand("ON",LED_on);          // Turns LED on
+  SCmd.addCommand("OFF",LED_off);        // Turns LED off
+  SCmd.addCommand("HELLO",SayHello);     // Echos the string argument back
+  SCmd.addCommand("P",process_command);  // Converts two arguments to integers and echos them back
+  SCmd.addDefaultHandler(unrecognized);  // Handler for command that isn't matched  (says "What?")
+
+
   // ********************************** init RFID **********************************
 
   SPI.begin();                                       // Init SPI bus
@@ -602,6 +613,9 @@ void loop()
       processPeerPacket();                             // method copied from NCaldes GCA50a
     }
   }
+
+  // check for serial commands
+  SCmd.readSerial();     // We don't do much, just process serial commands
 
   /********************************** OUTPUTS *******************************************
     handled by call-back function notifySwitchRequest to LocoNet.processSwitchSensorMessage
