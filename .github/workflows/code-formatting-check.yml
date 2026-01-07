@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: RafikFarhad/clang-format-github-action@v3
         with:
-          sources: "GCA51/**/*.ino,GCA51/**/*.h,GCA51/**/*.cpp"
+          sources: "GCA51/*.ino,GCA51/*.cpp"
 
       - name: Formatting feedback
         run: |
