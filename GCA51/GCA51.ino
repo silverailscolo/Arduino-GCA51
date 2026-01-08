@@ -1,7 +1,7 @@
 /**************************************************************************
    LocoGCA51 - Configurable Arduino LocoNet + RFID Module
    Copyright (C) 2016 Gerard Remmerswaal
-   Copyright (C) 2025 Egbert Broerse
+   Copyright (C) 2025-2026 Egbert Broerse
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -51,6 +51,7 @@
 #include "rfid2ln.h"
 #include <MFRC522.h>
 #include <Arduino.h>
+#include <SerialCommand.h>
 
 #define VERSION       151                      // 106 for GCA50a LocoIO (v148) functions, must be type int
 //#define DEBUG                                  // Uncomment this line to debug through the serial monitor
@@ -180,7 +181,7 @@ const CNFG_OPTIONS configOptions[16] = {
   { .code = 208, .description = "blck x"}           // [15]
 };
 
-// Timers for each input configured as "delayed"
+// Timers for each input that is configured as "delayed"
 // inputs defined as "delayed" will keep the signal high at least 2 seconds (why 2s? LocoIO docs says: 1-2*blinkDuration)
 unsigned long inpTimer[16];            // block delay per cnfg port
 uint8_t blinkRate = 0;                 // default board setting for blinking rate of output ports
@@ -199,6 +200,8 @@ boolean portRefresh = false;          // TODO send update of all input states wh
 // extern void notifySwitchRequest(uint16_t Address, uint8_t Output, uint8_t Direction); // idem
 
 MFRC522::MIFARE_Key key;
+
+SerialCommand SCmd;   // The SerialCommand object
 
 // ********************************** Utility methods ***************************************
 
@@ -289,7 +292,7 @@ void CalculateAddress()
         Serial.print(" (cfg: ");
         Serial.print(svtable.svt.pincfg[n].cnfg);
         // Serial.print(" ");
-        // Serial.print(getConfig(svtable.svt.pincfg[n].cnfg)); // adds pin config description - TDO fix
+        // Serial.print(getConfig(svtable.svt.pincfg[n].cnfg)); // adds pin config description - TODO fix
         // add no. 1/2 output pair = .value2 bits 4-7
         int logic = svtable.svt.pincfg[n].value2 & 0xF0;
         if (logic == 3)
@@ -388,6 +391,89 @@ char *getConfig(int pin)
   }
 }
 
+/***************************************************************************************************************************
+  Callbacks for SerialCommand prompts
+****************************************************************************************************************************/
+
+void LED_on()
+{
+  Serial.println("LED on");
+  digitalWrite (LocoLED, HIGH);
+}
+
+void LED_off()
+{
+  Serial.println("LED off");
+  digitalWrite (LocoLED, LOW);
+}
+
+void SayHello()
+{
+  char *arg;
+  arg = SCmd.next();    // Get the next argument from the SerialCommand object buffer
+  if (arg != NULL)      // As long as it existed, take it
+  {
+    Serial.print("Hello ");
+    Serial.println(arg);
+  }
+  else {
+    Serial.println("Hello, whoever you are");
+  }
+}
+
+void port_address()
+{
+  uint8_t s_port;
+  uint16_t s_port_addr;
+  char *arg;
+
+  // Serial.println("Run port_address()");
+  arg = SCmd.next();
+  if (arg != NULL)
+  {
+    s_port=atoi(arg);  // convert char string to int
+    if (s_port > 1 and s_port < 8)
+    {
+      Serial.print("Port ");
+      Serial.print(s_port);
+      Serial.print(" address: N/A");
+      return;
+    }
+  }
+  else {
+    Serial.println("Enter a port number (0-15)");
+    return;
+  }
+
+  arg = SCmd.next();
+  if (arg != NULL)
+  {
+    s_port_addr=atol(arg);  // convert char string to int
+    // set in EEPROM
+    uint8_t odd_even = 1;
+    if (s_port_addr % 2 == 0) odd_even = 2
+
+    // LocoIO: (SV5 & 0x0F) << 8 == high byte +  SV4 << 1 == low byte + odd_even == s_port_addr
+    value2_keep = svtable.svt.pincfg[s_port].value2 & 0xF0;  // retain the leftmost bits
+    svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only set change bits 0-3
+    svtable.svt.pincfg[s_port].value1 = (s_port_addr & 0x0F - odd_even) % 10; // low byte
+    bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
+
+    // Update global var
+    softwareAddress[s_port] = s_port_addr;
+  }
+  // print values
+  Serial.print("Port ");
+  Serial.print(s_port);
+  Serial.print(" address: ");
+  Serial.println(softwareAddress[s_port]);
+}
+
+// This gets set as the default handler, and gets called when no other command matches.
+void unrecognized()
+{
+  Serial.println("What?");
+}
 
 // *************** SETUP *************************
 
@@ -489,6 +575,14 @@ void setup()
     InitialiseInterrupt();                           // (only) inputs will get an interrupt
   }
 
+  // Setup callbacks for SerialCommand commands
+  SCmd.addCommand("ON",LED_on);          // Turns LED on
+  SCmd.addCommand("OFF",LED_off);        // Turns LED off
+  SCmd.addCommand("HELLO",SayHello);     // Echos the string argument back
+  SCmd.addCommand("P",port_address);     // Converts max. two arguments to int, sets port and echos new setting
+  SCmd.addDefaultHandler(unrecognized);  // Handler for command that isn't matched  (says "What?")
+
+
   // ********************************** init RFID **********************************
 
   SPI.begin();                                       // Init SPI bus
@@ -517,7 +611,7 @@ void setup()
     if ((readReg == 0x00) || (readReg == 0xFF)) { // reader missing
       if (bSerialOk) {
         Serial.println(F("] absent"));
-      }
+      }r
     } else {
       if (bSerialOk) {
         Serial.print(F("] present; version = "));
@@ -591,6 +685,9 @@ void loop()
       processPeerPacket();                             // from NCaldes GCA50a
     }
   }
+
+  // check for serial commands
+  SCmd.readSerial();     // We don't do much, just process serial commands
 
   /********************************** OUTPUTS *******************************************
     handled by call-back function notifySwitchRequest to LocoNet.processSwitchSensorMessage

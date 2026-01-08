@@ -1,5 +1,5 @@
 /**************************************************************************
-    LocoIno - Configurable Arduino Loconet Module - parts used in GCA51
+    LocoIno - Configurable Arduino LocoNet Module - some parts used in GCA51
     Copyright (C) 2014-2024 Daniel Guisado Serra
 
     This program is free software: you can redistribute it and/or modify
@@ -20,15 +20,15 @@
  ------------------------------------------------------------------------
  DESCRIPTION:
     This software emulates the functionality of a GCA50 board from Peter
-    Giling (Giling Computer Applications). This is a Loconet Interface
+    Giling (Giling Computer Applications). This is a LocoNet Interface
     with 16 I/O that can be individually configured as Input (block sensors)
     or Outputs (switches, lights,...).
-    Configuration is done through SV Loconet protocol and can be configured
+    Configuration is done through SV LocoNet protocol and can be configured
     from Rocrail (Programming->GCA->GCA50).
  ------------------------------------------------------------------------
  CREDITS:
- * Based on MRRwA Loconet libraries for Arduino - http://mrrwa.org/ and
-   the Loconet Monitor example.
+ * Based on MRRwA LocoNet libraries for Arduino - http://mrrwa.org/ and
+   the LocoNet Monitor example.
  * Inspired in GCA50 board from Peter Giling - http://www.phgiling.net/
  * Idea also inspired in LocoShield from SPCoast - http://www.scuba.net/
  * Thanks also to Rocrail group - http://www.rocrail.org
@@ -147,7 +147,7 @@ void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction )
 
 
 ///*
-// * Function to decode a received ln message and optionally change the board & sensor addresses
+// * Function to decode a received LocoNet message and optionally change the board & sensor addresses
 // */
 //void lnDecodeMessage(lnMsg *LnPacket)
 //{
