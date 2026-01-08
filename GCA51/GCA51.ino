@@ -421,34 +421,52 @@ void SayHello()
   }
 }
 
-void process_command()
+void port_address()
 {
-  int aNumber;
+  uint8_t s_port;
+  uint16_t s_port_addr;
   char *arg;
 
-  // Serial.println("We're in process_command");
+  // Serial.println("Run port_address()");
   arg = SCmd.next();
   if (arg != NULL)
   {
-    aNumber=atoi(arg);    // Converts a char string to an integer
-    Serial.print("First argument was: ");
-    Serial.println(aNumber);
+    s_port=atoi(arg);  // convert char string to int
+    if (s_port > 1 and s_port < 8)
+    {
+      Serial.print("Port ");
+      Serial.print(s_port);
+      Serial.print(" address: N/A");
+      return;
+    }
   }
   else {
-    Serial.println("No arguments");
+    Serial.println("Enter a port number (0-15)");
+    return;
   }
 
   arg = SCmd.next();
   if (arg != NULL)
   {
-    aNumber=atol(arg);
-    Serial.print("Second argument was: ");
-    Serial.println(aNumber);
-  }
-  else {
-    Serial.println("No second argument");
-  }
+    s_port_addr=atol(arg);  // convert char string to int
+    // set in EEPROM
+    uint8_t odd_even = 1;
+    if (s_port_addr % 2 == 0) odd_even = 2
 
+    // LocoIO: (SV5 & 0x0F) << 8 == high byte +  SV4 << 1 == low byte + odd_even == s_port_addr
+    value2_keep = svtable.svt.pincfg[s_port].value2 & 0xF0;  // retain the leftmost bits
+    svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only set change bits 0-3
+    svtable.svt.pincfg[s_port].value1 = (s_port_addr & 0x0F - odd_even) % 10; // low byte
+    bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
+
+    // Update global var
+    softwareAddress[s_port] = s_port_addr;
+  }
+  // print values
+  Serial.print("Port ");
+  Serial.print(s_port);
+  Serial.print(" address: ");
+  Serial.println(softwareAddress[s_port]);
 }
 
 // This gets set as the default handler, and gets called when no other command matches.
@@ -561,7 +579,7 @@ void setup()
   SCmd.addCommand("ON",LED_on);          // Turns LED on
   SCmd.addCommand("OFF",LED_off);        // Turns LED off
   SCmd.addCommand("HELLO",SayHello);     // Echos the string argument back
-  SCmd.addCommand("P",process_command);  // Converts two arguments to integers and echos them back
+  SCmd.addCommand("P",port_address);     // Converts max. two arguments to int, sets port and echos new setting
   SCmd.addDefaultHandler(unrecognized);  // Handler for command that isn't matched  (says "What?")
 
 
@@ -593,7 +611,7 @@ void setup()
     if ((readReg == 0x00) || (readReg == 0xFF)) { // reader missing
       if (bSerialOk) {
         Serial.println(F("] absent"));
-      }
+      }r
     } else {
       if (bSerialOk) {
         Serial.print(F("] present; version = "));
