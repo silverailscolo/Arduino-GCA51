@@ -90,5 +90,6 @@ jobs:
             - source-url: https://github.com/miguelbalboa/rfid.git
             - source-url: https://github.com/lmmeng/rfid2ln.git
             - source-url: https://github.com/mrrwa/LocoNet.git
+            - source-url: https://github.com/shyd/Arduino-SerialCommand.git
           sketch-paths: |
             ${{ env.UNIVERSAL_SKETCH_PATHS }}
