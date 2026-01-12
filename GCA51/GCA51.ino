@@ -220,10 +220,10 @@ void LocoNet_communication(byte on_off)
     LED_on_off = millis();                // remember start time
   }
 
-  if ((LED_on_off + LocoLED_wait) < millis())     // if the wait time has expired,
+  if ((LED_on_off + LocoLED_wait) < millis())  // if the wait time has expired
   {
     LED_on_off = 0;
-    digitalWrite (LocoLED, LOW);                  // turn off LocoLED
+    digitalWrite (LocoLED, LOW);               // turn off LocoLED
   }
 }
 
@@ -427,7 +427,7 @@ void portAddress()
   uint16_t s_port_addr;
   char *arg;
 
-  // Serial.println("Run port_address()");
+  // Serial.println("Run portAddress()");
   arg = SCmd.next();
   if (arg != NULL)
   {
@@ -436,7 +436,7 @@ void portAddress()
     {
       Serial.print("Port ");
       Serial.print(s_port);
-      Serial.print(" address: N/A");
+      Serial.println(" address: N/A");
       return;
     }
   }
@@ -481,16 +481,23 @@ void portFunction()
   if (arg != NULL)
   {
     s_port=atoi(arg);  // convert char string to int
-    if (s_port > 1 and s_port < 8)
+    if (s_port < 2)
     {
       Serial.print("Port ");
       Serial.print(s_port);
-      Serial.print(" function: N/A");
+      Serial.println(" function is fixed (RFID) and can't be set");
+      return;
+    }
+    if (s_port < 8)
+    {
+      Serial.print("Port ");
+      Serial.print(s_port);
+      Serial.println(" function: N/A");
       return;
     }
   }
   else {
-    Serial.println("Enter a port number (0-15)");
+    Serial.println("Enter a port number (8-15)");
     return;
   }
 
@@ -498,14 +505,67 @@ void portFunction()
   if (arg != NULL)
   {
     s_port_func=atol(arg);  // convert char string to int
-    // set in EEPROM
-    svtable.svt.pincfg[s_port].cnfg = s_port_func;
-    Serial.print("New function set:");
+    // validate
+    if (findConfig(s_port_func) != -1) {
+      // set in EEPROM
+      svtable.svt.pincfg[s_port].cnfg = s_port_func;
+      Serial.print("New function set:");
+    else:
+      Serial.print("Invalid function code: ");
+      Serial.println(s_port_func);
+      return;
   }
   // print values
   Serial.print("Port ");
   Serial.print(s_port);
   Serial.print(" function (code): ");
+  Serial.println(svtable.svt.pincfg[s_port].cnfg);
+}
+
+void portReset()
+{
+  uint8_t s_port;
+  char *arg;
+
+  // Serial.println("Run portReset()");
+  arg = SCmd.next();
+  if (arg != NULL)
+  {
+    s_port=atoi(arg);  // convert char string to int
+    if (s_port < 8)
+    {
+      Serial.print("Cannot reset Port ");
+      Serial.println(s_port);
+      return;
+    }
+  }
+  else {
+    Serial.println("Enter a port number (8-15)");
+    return;
+  }
+
+  // set defaults in EEPROM
+  uint16_t s_port_addr = s_port;
+  uint16_t s_port_func = 128;  // output default off
+  if (s_port_addr % 2 == 0) odd_even = 2
+  // see portAddress()
+  value2_keep = svtable.svt.pincfg[s_port].value2 & 0xF0;  // retain the leftmost bits
+  svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
+  svtable.svt.pincfg[s_port].value1 = (s_port_addr & 0x0F - odd_even) % 10; // low byte
+  bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
+
+  svtable.svt.pincfg[s_port].cnfg = s_port_func;
+
+  // Update global var
+  softwareAddress[s_port] = s_port_addr;
+  Serial.print("New address set:");
+
+  // print values
+  Serial.print("Port ");
+  Serial.print(s_port);
+  Serial.print(" was reset to address: ");
+  Serial.print(softwareAddress[s_port]);
+  Serial.print(", function: ");
   Serial.println(svtable.svt.pincfg[s_port].cnfg);
 }
 
@@ -634,6 +694,7 @@ void setup()
   SCmd.addCommand("HELLO",SayHello);     // Echos the (optional) string argument back
   SCmd.addCommand("P",portAddress);      // One num arg. Reads/Two num args. sets port address and echos new setting
   SCmd.addCommand("F",portFunction);     // One num arg. Reads/Two num args. sets port function and echos new setting
+  SCmd.addCommand("Z",portReset);        // Resets port address and function to initial defaults and echos new setting
   SCmd.addCommand("H",serialHelp);       // Display commands Help
   SCmd.addDefaultHandler(unrecognized);  // Handler for command that isn't matched  (says "What?")
 
