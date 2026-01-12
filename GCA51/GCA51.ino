@@ -201,7 +201,7 @@ boolean portRefresh = false;          // TODO send update of all input states wh
 
 MFRC522::MIFARE_Key key;
 
-SerialCommand SCmd;   // The SerialCommand object
+SerialCommand SCmd;  // The SerialCommand object
 
 // ********************************** Utility methods ***************************************
 
@@ -287,7 +287,7 @@ void CalculateAddress()
       else if (bitRead(svtable.svt.pincfg[n].cnfg, 7)) // configured as outputs
       {
         softwareAddress[n] = (((svtable.svt.pincfg[n].value2 & 0x0F) << 8 ) + (svtable.svt.pincfg[n].value1) + 1);
-        // Calculate software address of the port. Eg. for Port 1 .value1 == SV4 and .value2 == SV5
+        // Calculate software address of the port. E.g. for Port 1 .value1 == SV4 and .value2 == SV5
         Serial.print ("- Port "); Serial.print (n); Serial.print (" [H"); Serial.print(n - 7); Serial.print("] output, address: "); Serial.print(softwareAddress[n], DEC);
         Serial.print(" (cfg: ");
         Serial.print(svtable.svt.pincfg[n].cnfg);
@@ -378,7 +378,7 @@ int findConfig(int target)
 }
 
 /***************************************************************************************************************************
-  Purpose: Display all pin descriptions (for Serial Monitor)
+  Purpose: Display the config description for a pin (on Serial Monitor)
   ***********************/
 char *getConfig(int pin)
 {
@@ -421,7 +421,7 @@ void SayHello()
   }
 }
 
-void port_address()
+void portAddress()
 {
   uint8_t s_port;
   uint16_t s_port_addr;
@@ -455,18 +455,71 @@ void port_address()
 
     // LocoIO: (SV5 & 0x0F) << 8 == high byte +  SV4 << 1 == low byte + odd_even == s_port_addr
     value2_keep = svtable.svt.pincfg[s_port].value2 & 0xF0;  // retain the leftmost bits
-    svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only set change bits 0-3
+    svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
     svtable.svt.pincfg[s_port].value1 = (s_port_addr & 0x0F - odd_even) % 10; // low byte
     bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
 
     // Update global var
     softwareAddress[s_port] = s_port_addr;
+    Serial.print("New address set:");
   }
   // print values
   Serial.print("Port ");
   Serial.print(s_port);
   Serial.print(" address: ");
   Serial.println(softwareAddress[s_port]);
+}
+
+void portFunction()
+{
+  uint8_t s_port;
+  uint16_t s_port_func;
+  char *arg;
+
+  // Serial.println("Run portFunction()");
+  arg = SCmd.next();
+  if (arg != NULL)
+  {
+    s_port=atoi(arg);  // convert char string to int
+    if (s_port > 1 and s_port < 8)
+    {
+      Serial.print("Port ");
+      Serial.print(s_port);
+      Serial.print(" function: N/A");
+      return;
+    }
+  }
+  else {
+    Serial.println("Enter a port number (0-15)");
+    return;
+  }
+
+  arg = SCmd.next();
+  if (arg != NULL)
+  {
+    s_port_func=atol(arg);  // convert char string to int
+    // set in EEPROM
+    svtable.svt.pincfg[s_port].cnfg = s_port_func;
+    Serial.print("New function set:");
+  }
+  // print values
+  Serial.print("Port ");
+  Serial.print(s_port);
+  Serial.print(" function (code): ");
+  Serial.println(svtable.svt.pincfg[s_port].cnfg);
+}
+
+void serialHelp()
+{
+  Serial.println("GCA51 Serial Coammnds Help");
+  Serial.println("===")
+  Serial.println("H+Enter: Display commands help");
+  Serial.println("P 2+Enter: Display software address of port 2");
+  Serial.println("P 2 100+Enter: Set software address of port 2 to 100");
+  Serial.println("F 2+Enter: Display function of port 2 (code)");
+  Serial.println("F 2 128+Enter: Set function of port 2 to 128 =output Off (valid codes: from 15 up to 208)");
+  Serial.println("Z 2+Enter: Factory Reset port 2 (address and function)");
+  Serial.println("===")
 }
 
 // This gets set as the default handler, and gets called when no other command matches.
@@ -576,10 +629,12 @@ void setup()
   }
 
   // Setup callbacks for SerialCommand commands
-  SCmd.addCommand("ON",LED_on);          // Turns LED on
-  SCmd.addCommand("OFF",LED_off);        // Turns LED off
-  SCmd.addCommand("HELLO",SayHello);     // Echos the string argument back
-  SCmd.addCommand("P",port_address);     // Converts max. two arguments to int, sets port and echos new setting
+  SCmd.addCommand("ON",LED_on);          // Turns ESP onboard LED on
+  SCmd.addCommand("OFF",LED_off);        // Turns ESP onboard LED off
+  SCmd.addCommand("HELLO",SayHello);     // Echos the (optional) string argument back
+  SCmd.addCommand("P",portAddress);      // One num arg. Reads/Two num args. sets port address and echos new setting
+  SCmd.addCommand("F",portFunction);     // One num arg. Reads/Two num args. sets port function and echos new setting
+  SCmd.addCommand("H",serialHelp);       // Display commands Help
   SCmd.addDefaultHandler(unrecognized);  // Handler for command that isn't matched  (says "What?")
 
 
