@@ -740,7 +740,7 @@ void setup()
     if ((readReg == 0x00) || (readReg == 0xFF)) { // reader missing
       if (bSerialOk) {
         Serial.println(F("] absent"));
-      }r
+      }
     } else {
       if (bSerialOk) {
         Serial.print(F("] present; version = "));
