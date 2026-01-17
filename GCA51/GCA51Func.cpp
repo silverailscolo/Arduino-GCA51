@@ -56,11 +56,8 @@
 *               In the LocoNet.processSwitchSensorMessage is a pointer to this function
 *               The pointer is actually the name of this function
 **********************************************************************************************************************/
-void notifyPower( uint8_t State )
+void notifyPower( [[maybe_unused]] uint8_t State )
 {
-  int n;
-  int currentState;
-
   #ifdef DEBUG
   Serial.print("POWER: ");
   Serial.println( State ? "ON" : "OFF" );
@@ -70,11 +67,11 @@ void notifyPower( uint8_t State )
   if (State)
   {
     // Check inputs to inform
-    for (n=0; n<16; n++)
+    for (int n=0; n<16; n++)
     {
       if (!bitRead(svtable.svt.pincfg[n].cnfg,7) && software_address[n]>1) // Setup as an Input greater than 1
       {
-        currentState=digitalRead(pinMap[n]);
+        int currentState=digitalRead(pinMap[n]);
 
         #ifdef DEBUG
         Serial.print("INPUT ");Serial.print(n);
@@ -83,7 +80,7 @@ void notifyPower( uint8_t State )
         #endif
         bitWrite(svtable.svt.pincfg[n].value2,4,!currentState);
         LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[n].value1, svtable.svt.pincfg[n].value2);
-        //Update state to detect flank (use bit in value2 of SV)
+        // Update stored state to detect flank (use bit in value2 of SV)
         bitWrite(svtable.svt.pincfg[n].value2,4,currentState);
       }
     }
@@ -97,7 +94,7 @@ void notifyPower( uint8_t State )
 *               In the LocoNet.processSwitchSensorMessage is a pointer to this function
 *               The pointer is actually the name of this function
 **********************************************************************************************************************/
-void notifySensor( uint16_t Address, uint8_t State )
+void notifySensor( [[maybe_unused]] uint16_t Address, [[maybe_unused]] uint8_t State )
 {
   #ifdef DEBUG
   Serial.print("Sensor: ");
