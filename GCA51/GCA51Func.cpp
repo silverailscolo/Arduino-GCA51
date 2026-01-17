@@ -110,7 +110,7 @@ void notifySensor( [[maybe_unused]] uint16_t Address, [[maybe_unused]] uint8_t S
 *               In the LocoNet.processSwitchSensorMessage is a pointer to this function
 *               The pointer is actually the name of this function
 **********************************************************************************************************************/
-void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction )
+void notifySwitchReport( [[maybe_unused]] uint16_t Address, [[maybe_unused]] uint8_t Output, [[maybe_unused]] uint8_t Direction )
 {
   #ifdef DEBUG
   Serial.print("Switch Report: ");
@@ -124,7 +124,7 @@ void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction )
 
   // This call-back function is called from LocoNet.processSwitchSensorMessage
   // for all Switch State messages
-void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction )
+void notifySwitchState( [[maybe_unused]] uint16_t Address, [[maybe_unused]] uint8_t Output, [[maybe_unused]] uint8_t Direction )
 {
   #ifdef DEBUG
   Serial.print("Switch State: ");

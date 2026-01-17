@@ -824,7 +824,7 @@ void loop()
   {
     LocoNet_communication(1); // turn on onboard LocoLED - blink 1x + sensor change
     LN_STATUS lnSent = LocoNet.send( &SendPacketSensor[uiBufRdIdx], LN_BACKOFF_MAX - (ucBoardAddrLo % 10)); // trying to differentiate the ln reply time
-    if (lnSent = LN_DONE) // message sent OK
+    if (lnSent == LN_DONE) // message sent OK
     {
 #ifdef DEBUG
       // from JMRI 5.12ish LnInterpret() GCA51 RFID-7 size = 12 bytes
@@ -950,7 +950,7 @@ boolean processPeerPacket()
   // Check it is an OPC_PEER_XFER message
   if (LnPacket->px.command != OPC_PEER_XFER) return (false);
 
-  //Check it is my destination
+  // Check it is my destination
   if ((LnPacket->px.dst_l != 0 || LnPacket->px.d5 != 0) &&
       (LnPacket->px.dst_l != 0x7f || LnPacket->px.d5 != svtable.svt.addr_high) &&
       (LnPacket->px.dst_l != svtable.svt.addr_low || LnPacket->px.d5 != svtable.svt.addr_high))
