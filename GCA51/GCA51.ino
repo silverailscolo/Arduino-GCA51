@@ -1,7 +1,7 @@
 /**************************************************************************
    LocoGCA51 - Configurable Arduino LocoNet + RFID Module
    Copyright (C) 2016 Gerard Remmerswaal
-   Copyright (C) 2025 Egbert Broerse
+   Copyright (C) 2025-2026 Egbert Broerse
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@
   CREDITS:
   Based on MRRwA LocoNet libraries for Arduino - http://mrrwa.org/ and
   the LocoNet Monitor example.
+  The included rfid2ln lib was adapted from https://github.com/lmmeng/rfid2ln
+  to compile in Arduino IDE.
   Inspired in GCA50 board from Peter Giling - http://www.phgiling.net/
   Idea also inspired in LocoShield from SPCoast - http://www.scuba.net/
   Thanks also to Rocrail group - http://www.rocrail.org
