@@ -17,6 +17,8 @@ The code requires GCA51 hardware, available as a PCB or kit from [P. Giling](htt
 
 Follow the Arduino IDE guidelines.
 
+Install the RFID reader library "MFRC522" from the Arduino IDE > Tools > Library manager.
+
 Download the mrrwa [LocoNet library](https://github.com/mrrwa/LocoNet/blob/master/LocoNet.h) as a .ZIP and install it in the IDE using the Sketch > Include Library > Add .ZIP Library... menu.
 
-Also download the [rfid2ln](https://github.com/lmmeng/rfid2ln) library by Immeng. This sketch replaces the included .ino file, but you do need to copy both the rfid2ln.h and the rfid2lnFunc.cpp files to your Arduino IDE project folder.
+Also download the [rfid2ln](https://github.com/lmmeng/rfid2ln) library by Immeng. Our sketch replaces the included .ino file, but you do need to copy both the rfid2ln.h and the rfid2lnFunc.cpp files to your Arduino IDE project folder.
