@@ -452,7 +452,7 @@ void portAddress()
     if (s_port_addr % 2 == 0) odd_even = 2
 
     // LocoIO: (SV5 & 0x0F) << 8 == high byte +  SV4 << 1 == low byte + odd_even == s_port_addr
-    value2_keep = svtable.svt.pincfg[s_port].value2 & 0xF0;  // retain the leftmost bits
+    uint16_t value2_keep = (svtable.svt.pincfg[s_port].value2 & 0xF0);  // retain the leftmost bits
     svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
     svtable.svt.pincfg[s_port].value1 = (s_port_addr & 0x0F - odd_even) % 10; // low byte
     bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
@@ -508,10 +508,12 @@ void portFunction()
       // set in EEPROM
       svtable.svt.pincfg[s_port].cnfg = s_port_func;
       Serial.print("New function set:");
-    else:
+    }
+    else {
       Serial.print("Invalid function code: ");
       Serial.println(s_port_func);
       return;
+    }
   }
   // print values
   Serial.print("Port ");
@@ -545,9 +547,10 @@ void portReset()
   // set defaults in EEPROM
   uint16_t s_port_addr = s_port;
   uint16_t s_port_func = 128;  // output default off
+  uint8_t odd_even = 1;
   if (s_port_addr % 2 == 0) odd_even = 2
   // see portAddress()
-  value2_keep = svtable.svt.pincfg[s_port].value2 & 0xF0;  // retain the leftmost bits
+  uint16_t value2_keep = svtable.svt.pincfg[s_port].value2 & 0xF0;  // retain the leftmost bits
   svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
   svtable.svt.pincfg[s_port].value1 = (s_port_addr & 0x0F - odd_even) % 10; // low byte
   bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
@@ -569,15 +572,15 @@ void portReset()
 
 void serialHelp()
 {
-  Serial.println("GCA51 Serial Coammnds Help");
-  Serial.println("===")
+  Serial.println("GCA51 Serial Commands Help");
+  Serial.println("===");
   Serial.println("H+Enter: Display commands help");
   Serial.println("P 2+Enter: Display software address of port 2");
   Serial.println("P 2 100+Enter: Set software address of port 2 to 100");
   Serial.println("F 2+Enter: Display function of port 2 (code)");
   Serial.println("F 2 128+Enter: Set function of port 2 to 128 =output Off (valid codes: from 15 up to 208)");
   Serial.println("Z 2+Enter: Factory Reset port 2 (address and function)");
-  Serial.println("===")
+  Serial.println("===");
 }
 
 // This gets set as the default handler, and gets called when no other command matches.
