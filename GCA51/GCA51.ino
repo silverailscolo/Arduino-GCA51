@@ -449,7 +449,7 @@ void portAddress()
     s_port_addr=atol(arg);  // convert char string to int
     // set in EEPROM
     uint8_t odd_even = 1;
-    if (s_port_addr % 2 == 0) odd_even = 2
+    if (s_port_addr % 2 == 0) odd_even = 2;
 
     // LocoIO: (SV5 & 0x0F) << 8 == high byte +  SV4 << 1 == low byte + odd_even == s_port_addr
     uint16_t value2_keep = (svtable.svt.pincfg[s_port].value2 & 0xF0);  // retain the leftmost bits
@@ -548,7 +548,7 @@ void portReset()
   uint16_t s_port_addr = s_port;
   uint16_t s_port_func = 128;  // output default off
   uint8_t odd_even = 1;
-  if (s_port_addr % 2 == 0) odd_even = 2
+  if (s_port_addr % 2 == 0) odd_even = 2;
   // see portAddress()
   uint16_t value2_keep = svtable.svt.pincfg[s_port].value2 & 0xF0;  // retain the leftmost bits
   svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
