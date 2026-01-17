@@ -74,7 +74,7 @@ uint8_t processXferMess(lnMsg *LnRecMsg, lnMsg *cOutBuf){
     } else if ((LnRecMsg->data[4] != ucBoardAddrHi) && (LnRecMsg->data[4] != 0x7F)) {//not my low address and not address programming
         return (0);
     } else {//message for me
-        cOutBuf->data[0x00] = 0xE5; //allways PEER
+        cOutBuf->data[0x00] = 0xE5; //always PEER
         cOutBuf->data[0x01] = 0x10; //always 16 bytes long
         cOutBuf->data[0x0A] = 0; //clear the cOutBuf[0x0A];
 
