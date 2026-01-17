@@ -20,7 +20,7 @@
  * 
  * Typical pin layout used - Loconet: 
  * RX = ICP pin (see arduino.cc for details on each board). I'm using the Leonardo board => Pin4
- * TX can be freely choosed, but the LN_TX_PIN define (row 48) should be updated. 
+ * TX can be freely chosen, but the LN_TX_PIN define (row 48) should be updated.
  * -----------------------------------------------------------------------------------------
  *             Loconet      Arduino       Arduino   Arduino    Arduino          Arduino
  *             Signal       Uno           Mega      Nano v3    Leonardo/Micro   Pro Micro

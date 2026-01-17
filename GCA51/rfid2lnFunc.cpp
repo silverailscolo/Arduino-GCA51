@@ -162,7 +162,7 @@ uint8_t processXferMess(lnMsg *LnRecMsg, lnMsg *cOutBuf){
         } //if (cLnBuffer[0x06] == SV_CMD_READ)
 
         cOutBuf->data[0x02] = ucBoardAddrLo; // src low address;
-        cOutBuf->data[0x03] = LnRecMsg->data[0x02]; //dest low addres == received src low address;
+        cOutBuf->data[0x03] = LnRecMsg->data[0x02]; //dest low address == received src low address;
         cOutBuf->data[0x04] = ucBoardAddrHi;
         cOutBuf->data[0x05] = VER_HIGH; //unsigned char pxct1; (bit 3 = MSBit(b7) version)
         cOutBuf->data[0x06] = ucPeerRCommand; //0x02;  //unsigned char cmd;
@@ -249,7 +249,7 @@ void boardSetup(void){
 #else
           Serial.println(F("Using polling"));
 #endif          
-          // Show some details of the loconet setup
+          // Show some details of the LocoNet setup
           Serial.print(F("Board address: "));
           Serial.print(ucBoardAddrHi);
           Serial.print(F(" - "));
@@ -260,7 +260,7 @@ void boardSetup(void){
 
 /**
  * Recalculate the addresses printed / sent with RFID messages.
- * Needed at the begining and after the sensor address reprogramming over Loconet
+ * Needed at the beginning and after the sensor address reprogramming over LocoNet
  */
 void calcSenAddr(uint8_t port){
     uint8_t iSenAddr = 0;
@@ -356,18 +356,18 @@ void buildLnMessage(MFRC522 mfrc522, uint8_t uiRfidPort, uint8_t uiBufWrIdx){
    SendPacketSensor[uiBufWrIdx].data[uiLnSendMsbIdx] = 0; //clear the byte for the ms bits
    for (uint8_t i = 0, j = 5; i < UID_LEN; i++, j++) {
       if (mfrc522.uid.size > i) {
-        SendPacketSensor[uiBufWrIdx].data[j] = mfrc522.uid.uidByte[i] & 0x7F; //loconet bytes have only 7 bits;
-        // MSbit is transmited in the SendPacket.data[10]
+        SendPacketSensor[uiBufWrIdx].data[j] = mfrc522.uid.uidByte[i] & 0x7F; // LocoNet bytes have only 7 bits;
+        // MSbit is transmitted in the SendPacket.data[10]
         if(mfrc522.uid.uidByte[i] & 0x80) {
            SendPacketSensor[uiBufWrIdx].data[uiLnSendMsbIdx] |= 1 << i;
         }
-        SendPacketSensor[uiBufWrIdx].data[uiLnSendCheckSumIdx] ^= SendPacketSensor[uiBufWrIdx].data[j]; //calculate the checksumm
+        SendPacketSensor[uiBufWrIdx].data[uiLnSendCheckSumIdx] ^= SendPacketSensor[uiBufWrIdx].data[j]; //calculate the checksum
       } else { //if (mfrc522[port].uid.
         SendPacketSensor[uiBufWrIdx].data[j] = 0;
       }
    } //for(i=0
 
-   SendPacketSensor[uiBufWrIdx].data[uiLnSendCheckSumIdx] ^= SendPacketSensor[uiBufWrIdx].data[uiLnSendMsbIdx]; //calculate the checksumm
+   SendPacketSensor[uiBufWrIdx].data[uiLnSendCheckSumIdx] ^= SendPacketSensor[uiBufWrIdx].data[uiLnSendMsbIdx]; //calculate the checksum
 }
 
 
