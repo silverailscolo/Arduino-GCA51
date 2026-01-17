@@ -454,7 +454,7 @@ void portAddress()
     // LocoIO: (SV5 & 0x0F) << 8 == high byte +  SV4 << 1 == low byte + odd_even == s_port_addr
     uint16_t value2_keep = (svtable.svt.pincfg[s_port].value2 & 0xF0);  // retain the leftmost bits
     svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
-    svtable.svt.pincfg[s_port].value1 = (s_port_addr & 0x0F - odd_even) % 10; // low byte
+    svtable.svt.pincfg[s_port].value1 = ((s_port_addr & 0x0F) - odd_even) % 10; // low byte
     bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
 
     // Update global var
@@ -552,7 +552,7 @@ void portReset()
   // see portAddress()
   uint16_t value2_keep = svtable.svt.pincfg[s_port].value2 & 0xF0;  // retain the leftmost bits
   svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
-  svtable.svt.pincfg[s_port].value1 = (s_port_addr & 0x0F - odd_even) % 10; // low byte
+  svtable.svt.pincfg[s_port].value1 = ((s_port_addr & 0x0F) - odd_even) % 10; // low byte
   bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
 
   svtable.svt.pincfg[s_port].cnfg = s_port_func;
@@ -584,9 +584,14 @@ void serialHelp()
 }
 
 // This gets set as the default handler, and gets called when no other command matches.
-void unrecognized()
+// SerialCommand Advanced uses a default handler that receives the command string.
+// Use a signature that accepts the command buffer. If your installed SerialCommand
+// variant uses a different signature adjust accordingly.
+void unrecognized(char *command)
 {
-  Serial.println("What?");
+  Serial.print("What? Unrecognized command: ");
+  if (command && command[0]) Serial.println(command);
+  else Serial.println();
 }
 
 /********************** SETUP *************************/
@@ -712,7 +717,7 @@ void setup()
   SCmd.addCommand("F",portFunction);     // One num arg. Reads/Two num args. sets port function and echos new setting
   SCmd.addCommand("Z",portReset);        // Resets port address and function to initial defaults and echos new setting
   SCmd.addCommand("H",serialHelp);       // Display commands Help
-  SCmd.addDefaultHandler(unrecognized);  // Handler for command that isn't matched  (says "What?")
+  SCmd.setDefaultHandler(unrecognized);  // Handler for command that isn't matched  (says "What?")
 
 
   // ********************************** init RFID **********************************
