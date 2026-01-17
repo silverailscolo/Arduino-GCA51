@@ -61,14 +61,6 @@ jobs:
 
       matrix:
         board:
-          # For testing the sketches
-          - fqbn: arduino:avr:uno
-            usb: false
-            serial1: false
-            starter-kit: true
-            tone: true
-            a5: true
-          # Nano has 1.5 kB less available flash
           - fqbn: arduino:avr:nano
             usb: false
             serial1: false
