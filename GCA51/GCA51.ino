@@ -410,29 +410,64 @@ boolean isValidConfig(int code) {
 ****************************************************************************************************************************/
 #ifdef SERIAL_CMD
 
-void LED_on()
+void turnOn()
 {
-  Serial.println(F("LED on"));
-  digitalWrite (LocoLED, HIGH);
-}
-
-void LED_off()
-{
-  Serial.println(F("LED off"));
-  digitalWrite (LocoLED, LOW);
-}
-
-void SayHello()
-{
+  uint8_t s_port;
   char *arg;
   arg = SCmd.next();    // Get the next argument from the SerialCommand object buffer
   if (arg != NULL)      // As long as it existed, take it
   {
-    Serial.print(F("Hello "));
-    Serial.println(arg);
+    s_port=atoi(arg);  // convert char string to int
+    if (s_port > 7 && s_port < 16)
+    {
+        if (bitRead(svtable.svt.pincfg[s_port].cnfg, 7))  // only set outputs
+        {
+            digitalWrite(pinMap[s_port - 8], HIGH);
+            Serial.print(F("Turned on port "));
+            Serial.println(s_port);
+        }
+        else {
+            Serial.print(F("Can't set port "));
+            Serial.print(s_port);
+            Serial.print(F(" because it is an input."));
+        }
+    }
   }
   else {
-    Serial.println(F("Hello, whoever you are"));
+      Serial.println(F("LED on"));
+      digitalWrite (LocoLED, HIGH);
+  }
+}
+
+void turnOff()
+{
+  uint8_t s_port;
+  char *arg;
+  arg = SCmd.next();    // Get the next argument from the SerialCommand object buffer
+  if (arg != NULL)      // As long as it existed, take it
+  {
+    s_port=atoi(arg);  // convert char string to int
+    if (s_port > 7 && s_port < 16)
+    {
+        if (bitRead(svtable.svt.pincfg[s_port].cnfg, 7))  // only set outputs
+        {
+            digitalWrite(pinMap[s_port - 8], LOW);
+            Serial.print(F("Turned off port "));
+            Serial.println(s_port);
+        }
+        else {
+            Serial.print(F("Can't set port "));
+            Serial.print(s_port);
+            Serial.print(F(" because it is an input."));
+        }
+    }
+    else {
+        Serial.print(F("Enter a port number from 8 to 15"));
+    }
+  }
+  else {
+      Serial.println(F("LED off"));
+      digitalWrite (LocoLED, LOW);
   }
 }
 
@@ -447,7 +482,7 @@ void portAddress()
   if (arg != NULL)
   {
     s_port=atoi(arg);  // convert char string to int
-    if (s_port > 1 and s_port < 8)
+    if (s_port > 1 && s_port < 8)
     {
       Serial.print(F("Port "));
       Serial.print(s_port);
@@ -791,9 +826,8 @@ void setup()
 
 #ifdef SERIAL_CMD
   // Setup callbacks for SerialCommand commands
-  SCmd.addCommand("ON",LED_on);          // Turns ESP onboard LED on
-  SCmd.addCommand("OFF",LED_off);        // Turns ESP onboard LED off
-  SCmd.addCommand("HELLO",SayHello);     // Echos the (optional) string argument back
+  SCmd.addCommand("ON",turnOn);          // No arg. turns on ESP onboard LED/Two num args. turns output on
+  SCmd.addCommand("OFF",turnOff);        // No arg. turns off ESP onboard LED/Two num args. turns output off
   SCmd.addCommand("M",moduleAddress);    // No arg. Reads/One num args. sets module address and echos new setting
   SCmd.addCommand("P",portAddress);      // One num arg. Reads/Two num args. sets port address and echos new setting
   SCmd.addCommand("F",portFunction);     // One num arg. Reads/Two num args. sets port function and echos new setting

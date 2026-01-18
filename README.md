@@ -12,7 +12,7 @@ Version 152 includes:
 - flexible use of 0 to 2 RC522 readers
 - startup reporting in the Serial Console
 - blinking outputs using the Blink Rate board setting
-- optionally read/configure ports using commands over serial (type HELP in Serial Monitor)
+- optionally read/configure ports using commands over serial (type H in Serial Monitor)
 
 _NOTE: This code is under development as per February 2026 (see Issues)._
 
