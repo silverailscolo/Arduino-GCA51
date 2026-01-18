@@ -4,21 +4,29 @@
 ![workflow status](https://github.com/silverailscolo/GCA51/actions/workflows/spell-check.yml/badge.svg)
 
 ## Overview
-**GCA51** is a sketch to attach 2 RC522 RFID readers to an Arduino Nano based LocoIO module.
+**GCA51** is a sketch to attach two RC522 RFID readers to an Arduino Nano based LocoIO module.
 Earlier version were successfully used in RocRail and JMRI.
 
-Beta version 151b includes the updated rfid2ln library, flexible use of 0-2 RC522 readers and startup reporting in the Serial Console and blinking outputs using the Blink Rate board setting.
+Version 152 includes:
+- the updated rfid2ln library
+- flexible use of 0 to 2 RC522 readers
+- startup reporting in the Serial Console
+- blinking outputs using the Blink Rate board setting
+- optionally read/configure ports using commands over serial (type H in Serial Monitor)
 
-_NOTE: This code is under development as per February 2025 (see Issues)._
+_NOTE: This code is under development as per February 2026 (see Issues)._
 
 The code requires GCA51 hardware, available as a PCB or kit from [P. Giling](https://wiki.rocrail.net/doku.php?id=gca51-en).
 
 ## Installation
 
-Follow the Arduino IDE guidelines.
+Follow the Arduino IDE guidelines. 
 
 Install the RFID reader library "MFRC522" from the Arduino IDE > Tools > Library manager.
+Install the "SerialCommand_Advanced" library by argandas from the Arduino IDE > Tools > Library manager.
 
 Download the mrrwa [LocoNet library](https://github.com/mrrwa/LocoNet/blob/master/LocoNet.h) as a .ZIP and install it in the IDE using the Sketch > Include Library > Add .ZIP Library... menu.
 
 Updated versions of the [rfid2ln](https://github.com/lmmeng/rfid2ln) library by Immeng are included in the project to compile in current Arduino IDEs.
+
+When uploading the sketch to the Nano fails, try Tools > Processor: ATmega328P (Old Bootloader).
