@@ -461,25 +461,30 @@ void portAddress()
   }
 
   arg = SCmd.next();
-  if (arg != NULL && 0 < arg < 2054)
+  if (arg != NULL)
   {
-    s_port_addr=atol(arg);  // convert char string to int
-    // set in EEPROM
-    uint8_t odd_even = 1;
-    if (s_port_addr % 2 == 0) odd_even = 2;
-
-    // LocoIO: (SV5 & 0x0F) << 8 == high byte +  SV4 << 1 == low byte + odd_even == s_port_addr
-    uint16_t value2_keep = (svtable.svt.pincfg[s_port].value2 & 0xF0);  // retain the leftmost bits
-    svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
-    svtable.svt.pincfg[s_port].value1 = ((s_port_addr & 0x0F) - odd_even) % 10; // low byte
-    bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
-
-    // Update global var
-    softwareAddress[s_port] = s_port_addr;
-    Serial.print(F("New address set:"));
+    if (0 < arg < 2054)
+    {
+      s_port_addr=atol(arg);  // convert char string to int
+      // set in EEPROM
+      uint8_t odd_even = 1;
+      if (s_port_addr % 2 == 0) odd_even = 2;
+  
+      // LocoIO: (SV5 & 0x0F) << 8 == high byte +  SV4 << 1 == low byte + odd_even == s_port_addr
+      uint16_t value2_keep = (svtable.svt.pincfg[s_port].value2 & 0xF0);  // retain the leftmost bits
+      svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
+      svtable.svt.pincfg[s_port].value1 = ((s_port_addr & 0x0F) - odd_even) % 10; // low byte
+      bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
+  
+      // Update global var
+      softwareAddress[s_port] = s_port_addr;
+      Serial.print(F("New address set:"));
+    }
+    else {
+      Serial.print(F("Skipping invalid port address: "));
+    }
   }
   else {
-    Serial.print(F("Skipping invalid port address: "));
     Serial.println(arg);
   }
   // print values
