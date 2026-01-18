@@ -17,12 +17,12 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------
   DESCRIPTION:
+   The "heart" of the GCA51 is an Arduino Nano plugged into the PCB.
    This software uses two RFID readers to read RFID tags.
    The data from the tags are sent to Rocrail with LocoNet communication.
-   On the GCA51 board are 8 extra inputs available for inputs/outputs.
+   On the GCA51 board, 8 extra inputs are available as inputs or outputs.
    Configuration is done through SV LocoNet protocol and can be configured
    from Rocrail (Programming->GCA->GCA50).
-   The "heart" of the GCA51 is an Arduino Nano board.
    With the SERIALCMD option set, configurable from the Serial Monitor.
   ------------------------------------------------------------------------
   PIN ASSIGNMENT:
@@ -478,7 +478,7 @@ void portAddress()
   
       // Update global var
       softwareAddress[s_port] = s_port_addr;
-      Serial.print(F("New address set:"));
+      Serial.print(F("New address set."));
     }
     else {
       Serial.print(F("Skipping invalid port address: "));
@@ -596,11 +596,62 @@ void portReset()
   Serial.println(svtable.svt.pincfg[s_port].cnfg);
 }
 
+void moduleAddress()
+{
+  uint8_t s_board_lo;
+  uint8_t s_board_hi = 1;  // hi board address always 1 on GCA51
+  char *arg;
+
+  // Serial.println(F("Run boardAddress()"));
+  arg = SCmd.next();
+  if (arg != NULL)
+  {
+    s_board_lo=atoi(arg);  // convert char string to int
+    if (s_board_lo > 255 || s_board_lo < 1 || s_board_hi == 88)
+    {
+      Serial.print(F("Invalid board low address: "));
+      Serial.println(s_board_lo);
+      Serial.println(F("Enter a value between 1 and 255, excluding 88."));
+      return;
+    }
+
+    //    arg = SCmd.next();  // for LocoIO GCA50a
+    //    if (arg != NULL)
+    //    {
+    //      s_board_hi=atoi(arg);  // convert char string to int
+    //      if (s_board_hi > 255 || s_board_hi < 1)
+    //      {
+    //        Serial.print(F("Invalid board high address: "));
+    //        Serial.println(s_board_hi);
+    //        Serial.println(F("Enter a value between 1 and 255 (default: 1)."));
+    //        return;
+    //      }
+    // indent next block and add } for GCA50a variable board high address
+    
+    // set defaults in EEPROM
+    EEPROM.write(1, s_board_lo);
+    EEPROM.write(2, 1);
+    
+    // Update global var
+    svtable.svt.addr_low = s_board_lo;
+    svtable.svt.addr_high = s_board_hi;
+
+    Serial.println(F("New board address set."));
+//    }
+  }
+  
+  // print values
+  Serial.print(F("Module lo/hi address: "));
+  Serial.print(svtable.svt.addr_low); Serial.print(F("/")); Serial.println(svtable.svt.addr_high);
+}
+
 void serialHelp()
 {
   Serial.println(F("GCA51 Serial Commands Help"));
   Serial.println(F("==="));
-  Serial.println(F("H+Enter: Display commands help"));
+  Serial.println(F("H+Enter: Display this command help"));
+  Serial.println(F("M+Enter: Display module board low/high address"));
+  Serial.println(F("M 82+Enter: Set module board address to 82/1"));
   Serial.println(F("P 2+Enter: Display software address of port 2"));
   Serial.println(F("P 2 100+Enter: Set software address of port 2 to 100"));
   Serial.println(F("F 2+Enter: Display function of port 2 (code)"));
@@ -618,6 +669,7 @@ void unrecognized(char *command)
   Serial.print(F("What? Unrecognized command: "));
   if (command && command[0]) Serial.println(command);
   else Serial.println();
+  Serial.println(F(">> Enter H for Command Help"));
 }
 
 #endif
@@ -680,7 +732,7 @@ void setup()
     EEPROM.write(100, VERSION); // HDL LocoIO compatible SV100, readOnly from LocoNet
     // ReadCV returns offset x, x+1 and x+2 so we simulate returned values in processPeerPacket()
 
-    Serial.println(F("Version mismatch; EEPROM reset"));
+    Serial.println(F("Version mismatch; EEPROM was reset to defaults."));
   }
   else
   {
@@ -742,11 +794,12 @@ void setup()
   SCmd.addCommand("ON",LED_on);          // Turns ESP onboard LED on
   SCmd.addCommand("OFF",LED_off);        // Turns ESP onboard LED off
   SCmd.addCommand("HELLO",SayHello);     // Echos the (optional) string argument back
+  SCmd.addCommand("M",moduleAddress);    // No arg. Reads/One num args. sets module address and echos new setting
   SCmd.addCommand("P",portAddress);      // One num arg. Reads/Two num args. sets port address and echos new setting
   SCmd.addCommand("F",portFunction);     // One num arg. Reads/Two num args. sets port function and echos new setting
-  SCmd.addCommand("Z",portReset);        // Resets port address and function to initial defaults and echos new setting
-  SCmd.addCommand("H",serialHelp);       // Display commands Help
-  SCmd.setDefaultHandler(unrecognized);  // Handler for command that isn't matched  (says "What?")
+  SCmd.addCommand("Z",portReset);        // Resets port address and function to factory defaults and echos new setting
+  SCmd.addCommand("H",serialHelp);       // Display Serial Commands Help
+  SCmd.setDefaultHandler(unrecognized);  // Handler for unmatched command (says "What?")
 #endif
 
   // ********************************** init RFID **********************************
@@ -774,7 +827,7 @@ void setup()
       Serial.print(i + 1);
     }
 
-    if ((readReg == 0x00) || (readReg == 0xFF)) { // reader missing
+    if ((readReg == 0x00) || (readReg == 0xFF) || (readReg == 0x7F)) { // reader missing
       if (bSerialOk) {
         Serial.println(F("] absent"));
       }
