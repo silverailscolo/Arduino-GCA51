@@ -23,6 +23,7 @@
    Configuration is done through SV LocoNet protocol and can be configured
    from Rocrail (Programming->GCA->GCA50).
    The "heart" of the GCA51 is an Arduino Nano board.
+   With the SERIALCMD option set, configurable from the Serial Monitor.
   ------------------------------------------------------------------------
   PIN ASSIGNMENT:
   0,1 -> Serial, used to debug and LocoNet Monitor (uncomment DEBUG)
@@ -55,9 +56,9 @@
 #include <Arduino.h>
 #include <SerialCommand.h>
 
-#define VERSION       151                      // 106 for GCA50a LocoIO (v148) functions, must be type int
-//#define SERIAL_CMD                             // enable configuration over Serial Monitor
-//#define DEBUG                                  // Uncomment this line to debug through the serial monitor
+#define VERSION       152                      // 106 for GCA50a LocoIO (v148) functions, must be type int
+// #define SERIAL_CMD                             // enable configuration over Serial Monitor
+#define DEBUG                                  // Uncomment this line to debug through the serial monitor
 //#define JMRI4                                  // Uncomment this line to send Lissy IR messages instead of Lissy RFID-7
 #define LN_TX_PIN       7                      // Arduino Pin used as LocoNet Tx; Rx Pin is always the ICP Pin
 #define RST_PIN         6                      // Arduino Pin used as ResetPowerDownPin
@@ -152,32 +153,34 @@ SV_DATA svtable;                        // Union declaration svtable
 
 const uint8_t rfidOptions[2] = {27, 31};
 
-// const uint8_t configCodes[16] = {15,23,27,31,91,39,47,55,128,129,136,140,144,145,192,208}; // backup for configOptions lookup, requires more mem
+const uint8_t configCodes[16] = {15,23,27,31,91,39,47,55,128,129,136,140,144,145,192,208}; // backup for configOptions lookup, requires more mem
 
-typedef struct CNFG_OPTIONS
-{
-  uint8_t code;
-  char *description;                    // max length of description = 10 in getConfig(i)
-};
+// next info would be nice but memory hog
 
-const PROGMEM CNFG_OPTIONS configOptions[16] = {
-  {0, "unused"},            // [0] inputs:
-  {15, "tggl"},             // [1]
-  {23, "to"},               // [2] single contact "normal" turnout feedback
-  {27, "blck del"},         // [7]
-  {31, "blck"},             // [3]
-  {39, "btn ind"},          // [4]
-  {47, "btn"},              // [5] outputs:
-  {55, "to ct"},            // [6] 2 contacts turnout feedback, for 2: .value2 bits 4-7 = 3
-  {128, "off"},             // [8] for 1: .value2 bits 4-7 (JMRI HDL LocoIO Value2A) = 1
-  {129, "on"},              // [9] for 2: .value2 bits 4-7 = 3
-  {136, "pls sft"},         // [10]
-  {140, "pls hrd"},         // [11]
-  {144, "off x"},           // [12]
-  {145, "on x"},            // [13]
-  {192, "blck"},            // [14]
-  {208, "blck x"},          // [15]
-};
+//typedef struct CNFG_OPTIONS
+//{
+//  uint8_t code;
+//  char *description;                    // max length of description = 3 in getConfig(i)
+//};
+
+//const PROGMEM CNFG_OPTIONS configOptions[16] = {
+//  {0, "un"},            // [0] inputs:
+//  {15, "tg"},           // [1] toggle
+//  {23, "t"},            // [2] single contact "normal" turnout feedback
+//  {27, "bld"},          // [7] block delayed
+//  {31, "bl"},           // [3] block
+//  {39, "bti"},          // [4] button indirect
+//  {47, "bt"},           // [5] outputs:
+//  {55, "t2c"},          // [6] 2 contacts turnout feedback, for 2: .value2 bits 4-7 = 3
+//  {128, "off"},         // [8] for 1: .value2 bits 4-7 (JMRI HDL LocoIO Value2A) = 1
+//  {129, "on"},          // [9] for 2: .value2 bits 4-7 = 3
+//  {136, "pls"},         // [10] pulse soft reset
+//  {140, "plh"},         // [11] pulse hard reset
+//  {144, "ofx"},         // [12] off, flashing
+//  {145, "onx"},         // [13] on, flashing
+//  {192, "bl"},          // [14] block
+//  {208, "bl x"},        // [15] block flashing
+//};
 
 // Timers for each input that is configured as "delayed"
 // inputs defined as "delayed" will keep the signal high at least 2 seconds (why 2s? LocoIO docs says: 1-2*blinkDuration)
@@ -267,7 +270,9 @@ void CalculateAddress()
   // I/O ports 8-15
   for (n = 8; n < 16; n++)
   {
-    if (findConfig(svtable.svt.pincfg[n].cnfg) != -1) // read error? unexpected value for uint8_t, replace by 255?
+    // validate
+    if (isValidConfig(svtable.svt.pincfg[n].cnfg))
+    //if (findConfig(svtable.svt.pincfg[n].cnfg) != -1) // read error? unexpected value for uint8_t, replace by 255?
     {
       if (!bitRead(svtable.svt.pincfg[n].cnfg, 7)) // configured as inputs, active low
       {
@@ -363,34 +368,43 @@ ISR(PCINT1_vect)            // Interrupt service routine. Every single PCINT8..1
   Return value :
   int             the index for a match, -1 no match
 ****************************************************************************************************************************/
-int findConfig(int target)
-{
-  uint8_t i;
-  for (i = 0; i < ELEMENTCOUNT(configOptions); i++)
-  {
-    if (configOptions[i].code == target)
-    {
-      return i;
-    }
-  }
-  return -1;
-}
+//int findConfig(int target)
+//{
+//  uint8_t i;
+//  for (i = 0; i < ELEMENTCOUNT(configOptions); i++)
+//  {
+//    if (configOptions[i].code == target)
+//    {
+//      return i;
+//    }
+//  }
+//  return -1;
+//}
 
 /***************************************************************************************************************************
   Purpose: Display the config description for a pin (on Serial Monitor)
   ***********************/
-char *getConfig(int pin)
-{
-  const char *desc = (char*) malloc (10);
-  if (findConfig(svtable.svt.pincfg[pin].cnfg) != -1) {
-    strcpy(desc, configOptions[uint8_t(svtable.svt.pincfg[pin].cnfg)].description);
-    return desc;
-  } else {
-    return ("not found");
-  }
-  free(desc);
-}
+//char *getConfig(int pin)
+//{
+//  const char *desc = (char*) malloc (3);  // 3 char max descr
+//  if (findConfig(svtable.svt.pincfg[pin].cnfg) != -1) {
+//    strcpy(desc, configOptions[uint8_t(svtable.svt.pincfg[pin].cnfg)].description);
+//    return desc;
+//  } else {
+//    return ("not found");
+//  }
+//  free(desc);
+//}
 
+boolean isValidConfig(int code) {
+  for (int i = 0; i < sizeof(configCodes); i++) {
+      if (configCodes[i] == code) {
+          return true;
+      }
+    }
+  return false;
+}
+ 
 /***************************************************************************************************************************
   Callbacks for SerialCommand prompts
 ****************************************************************************************************************************/
@@ -447,7 +461,7 @@ void portAddress()
   }
 
   arg = SCmd.next();
-  if (arg != NULL)
+  if (arg != NULL && 0 < arg < 2054)
   {
     s_port_addr=atol(arg);  // convert char string to int
     // set in EEPROM
@@ -463,6 +477,10 @@ void portAddress()
     // Update global var
     softwareAddress[s_port] = s_port_addr;
     Serial.print("New address set:");
+  }
+  else {
+    Serial.print("Skipping invalid port address: ");
+    Serial.println(arg);
   }
   // print values
   Serial.print("Port ");
@@ -507,7 +525,7 @@ void portFunction()
   {
     s_port_func=atol(arg);  // convert char string to int
     // validate
-    if (findConfig(s_port_func) != -1) {
+    if (isValidConfig(s_port_func)) {
       // set in EEPROM
       svtable.svt.pincfg[s_port].cnfg = s_port_func;
       Serial.print("New function set:");
