@@ -18,6 +18,7 @@ The code requires GCA51 hardware, available as a PCB or kit from [P. Giling](htt
 Follow the Arduino IDE guidelines.
 
 Install the RFID reader library "MFRC522" from the Arduino IDE > Tools > Library manager.
+Install the "SerialCommand_Advanced" library by argandas from the Arduino IDE > Tools > Library manager.
 
 Download the mrrwa [LocoNet library](https://github.com/mrrwa/LocoNet/blob/master/LocoNet.h) as a .ZIP and install it in the IDE using the Sketch > Include Library > Add .ZIP Library... menu.
 

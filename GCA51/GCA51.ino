@@ -56,6 +56,7 @@
 #include <SerialCommand.h>
 
 #define VERSION       151                      // 106 for GCA50a LocoIO (v148) functions, must be type int
+#define SERIAL_CMD                             // enable configuration over Serial Monitor
 //#define DEBUG                                  // Uncomment this line to debug through the serial monitor
 //#define JMRI4                                  // Uncomment this line to send Lissy IR messages instead of Lissy RFID-7
 #define LN_TX_PIN       7                      // Arduino Pin used as LocoNet Tx; Rx Pin is always the ICP Pin
@@ -198,8 +199,9 @@ boolean portRefresh = false;          // TODO send update of all input states wh
 
 MFRC522::MIFARE_Key key;
 
-SerialCommand SCmd;  // The SerialCommand object
-
+#ifdef SERIAL_CMD
+  SerialCommand SCmd;  // The SerialCommand object
+#endif
 // ********************************** Utility methods ***************************************
 
 /*********************************************************************************
@@ -392,6 +394,7 @@ char *getConfig(int pin)
 /***************************************************************************************************************************
   Callbacks for SerialCommand prompts
 ****************************************************************************************************************************/
+#ifdef SERIAL_CMD
 
 void LED_on()
 {
@@ -594,6 +597,8 @@ void unrecognized(char *command)
   else Serial.println();
 }
 
+#endif
+
 /********************** SETUP *************************/
 void setup()
 {
@@ -709,6 +714,7 @@ void setup()
   }
   Serial.print("Module lo/hi address: "); Serial.print(svtable.svt.addr_low); Serial.print("/"); Serial.println(svtable.svt.addr_high);
 
+#ifdef SERIAL_CMD
   // Setup callbacks for SerialCommand commands
   SCmd.addCommand("ON",LED_on);          // Turns ESP onboard LED on
   SCmd.addCommand("OFF",LED_off);        // Turns ESP onboard LED off
@@ -718,7 +724,7 @@ void setup()
   SCmd.addCommand("Z",portReset);        // Resets port address and function to initial defaults and echos new setting
   SCmd.addCommand("H",serialHelp);       // Display commands Help
   SCmd.setDefaultHandler(unrecognized);  // Handler for command that isn't matched  (says "What?")
-
+#endif
 
   // ********************************** init RFID **********************************
 
@@ -821,8 +827,10 @@ void loop()
     }
   }
 
+#ifdef SERIAL_CMD
   // check for serial commands
   SCmd.readSerial();     // We don't do much, just process serial commands
+#endif
 
   /********************************** OUTPUTS *******************************************
     handled by call-back function notifySwitchRequest to LocoNet.processSwitchSensorMessage
