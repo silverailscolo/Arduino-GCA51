@@ -503,7 +503,7 @@ void portAddress()
     if (0 < arg <= 2048)
     {
       s_port_addr = atol(arg);  // convert char string to int
-      //setPortAddress(s_port, s_port_addr, false);
+      setPortAddress(s_port, s_port_addr, ((svtable.svt.pincfg[s_port].cnfg & 0x80) == 0));
       Serial.print(F("New address set for "));
     }
     else {
@@ -605,7 +605,7 @@ void portReset()
   uint16_t s_port_addr = s_port;
   uint16_t s_port_func = 128;  // default: output, default off
   
-  //setPortAddress(s_port, s_port_addr, ((s_port_func & 0x80) == 0)); // check cnfg bit 7 (input?)
+  setPortAddress(s_port, s_port_addr, false); // check cnfg bit 7 (input?)
 
   // set function
   svtable.svt.pincfg[s_port].cnfg = s_port_func;
