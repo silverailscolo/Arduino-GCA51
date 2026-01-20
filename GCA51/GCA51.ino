@@ -57,8 +57,8 @@
 #include <SerialCommand.h>
 
 #define VERSION       152                      // 106 for GCA50a LocoIO (v148) functions, must be type int
-#define SERIAL_CMD                             // enable configuration over Serial Monitor
 #define DEBUG                                  // Uncomment this line to debug through the serial monitor
+#define SERIAL_CMD                             // enable configuration over Serial Monitor
 //#define JMRI4                                  // Uncomment this line to send Lissy IR messages instead of Lissy RFID-7
 #define LN_TX_PIN       7                      // Arduino Pin used as LocoNet Tx; Rx Pin is always the ICP Pin
 #define RST_PIN         6                      // Arduino Pin used as ResetPowerDownPin
