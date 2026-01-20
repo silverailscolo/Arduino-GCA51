@@ -57,8 +57,8 @@
 #include <SerialCommand.h>
 
 #define VERSION       152                      // 106 for GCA50a LocoIO (v148) functions, must be type int
-#define SERIAL_CMD                             // enable configuration over Serial Monitor
 #define DEBUG                                  // Uncomment this line to debug through the serial monitor
+#define SERIAL_CMD                             // enable configuration over Serial Monitor
 //#define JMRI4                                  // Uncomment this line to send Lissy IR messages instead of Lissy RFID-7
 #define LN_TX_PIN       7                      // Arduino Pin used as LocoNet Tx; Rx Pin is always the ICP Pin
 #define RST_PIN         6                      // Arduino Pin used as ResetPowerDownPin
@@ -164,14 +164,16 @@ const uint8_t configCodes[16] = {15,23,27,31,91,39,47,55,128,129,136,140,144,145
 //};
 
 //const PROGMEM CNFG_OPTIONS configOptions[16] = {
-//  {0, "un"},            // [0] inputs:
+// inputs:
+//  {0, "un"},            // [0] unused
 //  {15, "tg"},           // [1] toggle
 //  {23, "t"},            // [2] single contact "normal" turnout feedback
 //  {27, "bld"},          // [7] block delayed
 //  {31, "bl"},           // [3] block
 //  {39, "bti"},          // [4] button indirect
-//  {47, "bt"},           // [5] outputs:
+//  {47, "bt"},           // [5] button
 //  {55, "t2c"},          // [6] 2 contacts turnout feedback, for 2: .value2 bits 4-7 = 3
+// outputs (bit 7 == 1)
 //  {128, "off"},         // [8] for 1: .value2 bits 4-7 (JMRI HDL LocoIO Value2A) = 1
 //  {129, "on"},          // [9] for 2: .value2 bits 4-7 = 3
 //  {136, "pls"},         // [10] pulse soft reset
@@ -276,7 +278,7 @@ void CalculateAddress()
     {
       if (!bitRead(svtable.svt.pincfg[n].cnfg, 7)) // configured as inputs, active low
       {
-        if (bitRead (svtable.svt.pincfg[n].value2, 5)) odd_even = 2; // bitread for bit 5 in SV5, SV8, SV11, SV14 etc.
+        if (bitRead (svtable.svt.pincfg[n].value2, 5)) odd_even = 2; // bitRead for bit 5 in SV5, SV8, SV11, SV14 etc.
         else odd_even = 1;
 
         softwareAddress[n] = (((svtable.svt.pincfg[n].value2 & 0x0F) << 8 ) + (svtable.svt.pincfg[n].value1 << 1 ) + odd_even); // Calculate software address of port. For Port 1 .value1 == SV4 and .value2 == SV5
@@ -383,7 +385,7 @@ ISR(PCINT1_vect)            // Interrupt service routine. Every single PCINT8..1
 
 /***************************************************************************************************************************
   Purpose: Display the config description for a pin (on Serial Monitor)
-  ***********************/
+***********************/
 //char *getConfig(int pin)
 //{
 //  const char *desc = (char*) malloc (3);  // 3 char max descr
@@ -415,9 +417,9 @@ void turnOn()
   uint8_t s_port;
   char *arg;
   arg = SCmd.next();    // Get the next argument from the SerialCommand object buffer
-  if (arg != NULL)      // As long as it existed, take it
+  if (arg != NULL)      // As long as it exists, take it
   {
-    s_port=atoi(arg);  // convert char string to int
+    s_port = atoi(arg);  // convert char string to int
     if (s_port > 7 && s_port < 16)
     {
         if (bitRead(svtable.svt.pincfg[s_port].cnfg, 7))  // only set outputs
@@ -444,9 +446,9 @@ void turnOff()
   uint8_t s_port;
   char *arg;
   arg = SCmd.next();    // Get the next argument from the SerialCommand object buffer
-  if (arg != NULL)      // As long as it existed, take it
+  if (arg != NULL)      // As long as it exists, take it
   {
-    s_port=atoi(arg);  // convert char string to int
+    s_port = atoi(arg);  // convert char string to int
     if (s_port > 7 && s_port < 16)
     {
         if (bitRead(svtable.svt.pincfg[s_port].cnfg, 7))  // only set outputs
@@ -481,7 +483,7 @@ void portAddress()
   arg = SCmd.next();
   if (arg != NULL)
   {
-    s_port=atoi(arg);  // convert char string to int
+    s_port = atoi(arg);  // convert char string to int
     if (s_port > 1 && s_port < 8)
     {
       Serial.print(F("Port "));
@@ -491,29 +493,18 @@ void portAddress()
     }
   }
   else {
-    Serial.println(F("Enter a port number (0-15)"));
+    Serial.println(F("Enter a port number (0-1, 8-15)"));
     return;
   }
 
   arg = SCmd.next();
   if (arg != NULL)
   {
-    if (0 < arg < 2054)
+    if (0 < arg <= 2048)
     {
-      s_port_addr=atol(arg);  // convert char string to int
-      // set in EEPROM
-      uint8_t odd_even = 1;
-      if (s_port_addr % 2 == 0) odd_even = 2;
-  
-      // LocoIO: (SV5 & 0x0F) << 8 == high byte +  SV4 << 1 == low byte + odd_even == s_port_addr
-      uint16_t value2_keep = (svtable.svt.pincfg[s_port].value2 & 0xF0);  // retain the leftmost bits
-      svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
-      svtable.svt.pincfg[s_port].value1 = ((s_port_addr & 0x0F) - odd_even) % 10; // low byte
-      bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
-  
-      // Update global var
-      softwareAddress[s_port] = s_port_addr;
-      Serial.print(F("New address set."));
+      s_port_addr = atol(arg);  // convert char string to int
+      setPortAddress(s_port, s_port_addr, ((svtable.svt.pincfg[s_port].cnfg & 0x80) == 0));
+      Serial.print(F("New address set for "));
     }
     else {
       Serial.print(F("Skipping invalid port address: "));
@@ -539,7 +530,7 @@ void portFunction()
   arg = SCmd.next();
   if (arg != NULL)
   {
-    s_port=atoi(arg);  // convert char string to int
+    s_port = atoi(arg);  // convert char string to int
     if (s_port < 2)
     {
       Serial.print(F("Port "));
@@ -563,12 +554,18 @@ void portFunction()
   arg = SCmd.next();
   if (arg != NULL)
   {
-    s_port_func=atol(arg);  // convert char string to int
+    s_port_func = atol(arg);  // convert char string to int
     // validate
     if (isValidConfig(s_port_func)) {
-      // set in EEPROM
+      // update global vars
       svtable.svt.pincfg[s_port].cnfg = s_port_func;
-      Serial.print(F("New function set:"));
+      svtable.data[3 * (s_port + 1)] = s_port_func;
+      // set in EEPROM for persistence
+      EEPROM.write(3 * (s_port + 1), s_port_func);
+
+      // set blink bit to ON
+      if (bitRead(svtable.svt.pincfg[s_port].cnfg, 4)) blinkState[s_port] = 1;
+      Serial.print(F("New function set for "));
     }
     else {
       Serial.print(F("Invalid function code: "));
@@ -585,14 +582,14 @@ void portFunction()
 
 void portReset()
 {
-  uint8_t s_port;
+  uint8_t s_port;  // port index, starts at 0
   char *arg;
 
   // Serial.println(F("Run portReset()"));
   arg = SCmd.next();
   if (arg != NULL)
   {
-    s_port=atoi(arg);  // convert char string to int
+    s_port = atoi(arg);  // convert char string to int
     if (s_port < 8)
     {
       Serial.print(F("Cannot reset Port "));
@@ -605,23 +602,19 @@ void portReset()
     return;
   }
 
-  // set defaults in EEPROM
+  // defaults
   uint16_t s_port_addr = s_port;
-  uint16_t s_port_func = 128;  // output default off
-  uint8_t odd_even = 1;
-  if (s_port_addr % 2 == 0) odd_even = 2;
-  // see portAddress()
-  uint16_t value2_keep = svtable.svt.pincfg[s_port].value2 & 0xF0;  // retain the leftmost bits
-  svtable.svt.pincfg[s_port].value2 = value2_keep | (s_port_addr >> 8); // high byte, only change bits 0-3
-  svtable.svt.pincfg[s_port].value1 = ((s_port_addr & 0x0F) - odd_even) % 10; // low byte
-  bitWrite(svtable.svt.pincfg[s_port].value2, 5, s_port_addr % 2 == 0); // even = bit set
+  uint16_t s_port_func = 128;  // default: output, default off
+  
+  setPortAddress(s_port, s_port_addr, false); // check cnfg bit 7 (input?)
 
+  // set function in global vars
   svtable.svt.pincfg[s_port].cnfg = s_port_func;
+  svtable.data[3 * (s_port + 1)] = s_port_func;
+  // set in EEPROM for persistence
+  EEPROM.write(3 * (s_port + 1), s_port_func);
 
-  // Update global var
-  softwareAddress[s_port] = s_port_addr;
-  Serial.print(F("New address set:"));
-
+  Serial.print(F("Port ")); Serial.print(s_port); Serial.print(F(" was reset to "));
   // print values
   Serial.print(F("Port "));
   Serial.print(s_port);
@@ -630,19 +623,19 @@ void portReset()
   Serial.print(F(", function: "));
   Serial.println(svtable.svt.pincfg[s_port].cnfg);
 }
-
+  
 void moduleAddress()
 {
   uint8_t s_board_lo;
   uint8_t s_board_hi = 1;  // hi board address always 1 on GCA51
   char *arg;
 
-  // Serial.println(F("Run boardAddress()"));
+  // Serial.println(F("Run moduleAddress()"));
   arg = SCmd.next();
   if (arg != NULL)
   {
-    s_board_lo=atoi(arg);  // convert char string to int
-    if (s_board_lo > 255 || s_board_lo < 1 || s_board_hi == 88)
+    s_board_lo = atoi(arg);  // convert char string to int
+    if (s_board_lo > 255 || s_board_lo < 1 || s_board_hi == 80)  // 80/1 is reserved LocoBuffer address
     {
       Serial.print(F("Invalid board low address: "));
       Serial.println(s_board_lo);
@@ -653,7 +646,7 @@ void moduleAddress()
     //    arg = SCmd.next();  // for LocoIO GCA50a
     //    if (arg != NULL)
     //    {
-    //      s_board_hi=atoi(arg);  // convert char string to int
+    //      s_board_hi = atoi(arg);  // convert char string to int
     //      if (s_board_hi > 255 || s_board_hi < 1)
     //      {
     //        Serial.print(F("Invalid board high address: "));
@@ -662,14 +655,13 @@ void moduleAddress()
     //        return;
     //      }
     // indent next block and add } for GCA50a variable board high address
-    
-    // set defaults in EEPROM
-    EEPROM.write(1, s_board_lo);
-    EEPROM.write(2, 1);
-    
-    // Update global var
+
+    // Set address in global vars
     svtable.svt.addr_low = s_board_lo;
     svtable.svt.addr_high = s_board_hi;
+    // set in EEPROM for persistence
+    EEPROM.write(1, s_board_lo);
+    EEPROM.write(2, 1);
 
     Serial.println(F("New board address set."));
 //    }
@@ -680,13 +672,49 @@ void moduleAddress()
   Serial.print(svtable.svt.addr_low); Serial.print(F("/")); Serial.println(svtable.svt.addr_high);
 }
 
+// Board Blink Rate
+void moduleBlinkRate()
+{
+  uint8_t s_board_blink;
+  char *arg;
+
+  // Serial.println(F("Run moduleBlinkRate()"));
+  arg = SCmd.next();
+  if (arg != NULL)
+  {
+    s_board_blink = atoi(arg);  // convert char string to int
+    if (s_board_blink > 15 || s_board_blink < 0)
+    {
+      Serial.print(F("Invalid board blink rate: "));
+      Serial.println(s_board_blink);
+      Serial.println(F("Enter a value between 0 (slow) and 15 (fast)."));
+      return;
+    }
+
+    // Update global vars
+    blinkRate = s_board_blink;
+    blinkDuration = 1000 - 30 * blinkRate;
+    svtable.data[0] = ((blinkRate * 16) | (svtable.data[0] & 0x0F)); // retain bits 0-3
+    // set cnfg in EEPROM
+    EEPROM.write(0, svtable.data[0]);
+
+    Serial.println(F("New board blink rate set."));
+  }
+
+  // print values
+  Serial.print(F("Module blink rate: "));
+  Serial.println(svtable.data[0] >> 4);
+}
+
 void serialHelp()
 {
   Serial.println(F("GCA51 Serial Commands Help"));
   Serial.println(F("==="));
   Serial.println(F("H+Enter: Display this command help"));
-  Serial.println(F("M+Enter: Display module board low/high address"));
-  Serial.println(F("M 82+Enter: Set module board address to 82/1"));
+  Serial.println(F("MA+Enter: Display module board low/high address"));
+  Serial.println(F("MB 6+Enter: Set module blink rate to 6"));
+  Serial.println(F("MB+Enter: Display module blink rate"));
+  Serial.println(F("MA 82+Enter: Set module board address to 82/1"));
   Serial.println(F("P 2+Enter: Display software address of port 2"));
   Serial.println(F("P 2 100+Enter: Set software address of port 2 to 100"));
   Serial.println(F("F 2+Enter: Display function of port 2 (code)"));
@@ -707,6 +735,25 @@ void unrecognized(char *command)
   Serial.println(F(">> Enter H for Command Help"));
 }
 
+// util for SerialCommand callbacks
+void setPortAddress(uint8_t s_port, uint16_t s_port_addr, bool isInput)
+{
+  // split port address
+  uint16_t newValue1 = (s_port_addr - 1) & 0x7F;
+  uint16_t newValue2 = (s_port_addr & 780) >> 7;  // 4 high bits
+  if (isInput) newValue2 = newValue2 | 0x10;  // sensor bit 4 (input)
+  if (s_port_addr % 2 == 0) newValue2 = newValue2 | 0x20;  // even bit 5
+  
+  svtable.svt.pincfg[s_port].value1 = newValue1; // low byte
+  svtable.svt.pincfg[s_port].value2 = newValue2; // high byte, only change bits 0-3
+  // update global vars
+  softwareAddress[s_port] = s_port_addr;
+  svtable.data[(3 * (s_port + 1)) + 1] = newValue1;
+  svtable.data[(3 * (s_port + 1)) + 2] = newValue2;
+  // set in EEPROM for persistence
+  EEPROM.write((3 * (s_port + 1)) + 1, newValue1);
+  EEPROM.write((3 * (s_port + 1)) + 2, newValue2);
+}
 #endif
 
 /********************** SETUP *************************/
@@ -742,7 +789,7 @@ void setup()
   LocoNet.init(LN_TX_PIN); // Use explicit naming of the Tx Pin to avoid confusion
 
   // Load config from EEPROM
-  svtable.svt.board_cnfg = EEPROM.read(0); // not used but is it a memory spacer?
+  svtable.svt.board_cnfg = EEPROM.read(0); // contains board blink rate, etc.
   svtable.svt.addr_low = EEPROM.read(1);
   svtable.svt.addr_high = EEPROM.read(2);
 #ifdef DEBUG
@@ -751,7 +798,6 @@ void setup()
     svtable.data[n] = EEPROM.read(n);  // Read the values of SV0 till SV100. The values in EEPROM were OK or standardised in start_setup()
     Serial.print(n); Serial.print(F(": ")); Serial.println(svtable.data[n]);
   }
-  // BUG: svtable.svt.board_cnfg AKA .vrsion is always 0. Why? Because is overlaps with board_cnfg SV0
 #endif
 
   // Check for a valid config
@@ -760,7 +806,7 @@ void setup()
     svtable.data[100] = VERSION;
     svtable.svt.addr_low = ucBoardAddrLo;
     svtable.svt.addr_high = ucBoardAddrHi;
-    EEPROM.write(0, 0); // HDL LocoIO compatible board config (stores refresh at power on, blink rate etc.)
+    EEPROM.write(0, 0); // HDL LocoIO compatible board config (stores: refresh at power on, blink rate, etc.)
     EEPROM.write(1, svtable.svt.addr_low);
     EEPROM.write(2, svtable.svt.addr_high);
     EEPROM.write(99, 0); // init JMRI LocoIO decoder storage of o-bits
@@ -800,7 +846,8 @@ void setup()
 #ifdef DEBUG
     Serial.println(F("Initializing pins..."));
 #endif
-    for (n = 8; n < 16; n++) // The first 8 I/O ports are already set and are not available to users, except to set addresses of ports 1 and 2 (RFID sensor ports)
+    for (n = 8; n < 16; n++) // The first 8 I/O ports are already set and are not available to users,
+      // except to set addresses of ports 1 and 2 (RFID sensor ports).
       // The actual hardware Nano pin numbers are declared in the global variable pinMap[]
     {
       if (bitRead(svtable.svt.pincfg[n].cnfg, 7))                                         // if cnfg bit 7 == 1, pin is an Output
@@ -828,10 +875,11 @@ void setup()
   // Setup callbacks for SerialCommand commands
   SCmd.addCommand("ON",turnOn);          // No arg. turns on ESP onboard LED/Two num args. turns output on
   SCmd.addCommand("OFF",turnOff);        // No arg. turns off ESP onboard LED/Two num args. turns output off
-  SCmd.addCommand("M",moduleAddress);    // No arg. Reads/One num args. sets module address and echos new setting
+  SCmd.addCommand("MA",moduleAddress);   // No arg. Reads/One num args. sets module address and echos new setting
+  SCmd.addCommand("MB",moduleBlinkRate); // No arg. Reads/One num args. sets module blink rate and echos new setting
   SCmd.addCommand("P",portAddress);      // One num arg. Reads/Two num args. sets port address and echos new setting
   SCmd.addCommand("F",portFunction);     // One num arg. Reads/Two num args. sets port function and echos new setting
-  SCmd.addCommand("Z",portReset);        // Resets port address and function to factory defaults and echos new setting
+  SCmd.addCommand("Z",portReset);        // One num arg. Resets port address + function to defaults and echos new setting
   SCmd.addCommand("H",serialHelp);       // Display Serial Commands Help
   SCmd.setDefaultHandler(unrecognized);  // Handler for unmatched command (says "What?")
 #endif
@@ -960,7 +1008,7 @@ void loop()
       {
         IO_timing[n - 8] = millis();                                                                 // input is active, start timer
         LocoNet_communication(1);                                                                    // turn on LocoLED
-        bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n - 8]);                                 // Store state in input[n].value2 bit because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
+        bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n - 8]);                                 // Store state in input[n].value2 bit 4 because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
 
         if (svtable.svt.pincfg[n].cnfg & 0x7) // pushbutton/toggle input (15 or 39 or 47) or turnout feedback 1/2 (23 or 55)
         {
@@ -990,7 +1038,7 @@ void loop()
       IO_timing[n - 8] = 0;                                                                           // reset WaitTime
       IO_status[n - 8] = 0;                                                                           // make input (hall-sensor) inactive after WaitTime
       LocoNet_communication(1);                                                                       // turn on LocoLED
-      bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n - 8]);                                    // Store state in input[n].value2 bit because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
+      bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n - 8]);                                    // Store state in input[n].value2 bit 4 because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
       LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[n].value1, svtable.svt.pincfg[n].value2);        // Send the input[n] change to LocoNet
     }
   }
@@ -1027,7 +1075,7 @@ void loop()
             //if (! compareUid( mfrc522[uiRfidPort].uid.uidByte, oldUid[uiRfidPort], mfrc522[uiRfidPort].uid.size)) // if the card-ID differs from the previous card-ID - original GCA51
             //{
             // set sensor Active/LOW (see rfid2ln)
-            bitWrite(svtable.svt.pincfg[uiRfidPort].value2, 4, 0x0); // Store state in input[uiRfidPort].value2 bit because the next LocoNet.send(OPC_INPUT_REP, ) function needs this info
+            bitWrite(svtable.svt.pincfg[uiRfidPort].value2, 4, 0x0); // Store state in input[uiRfidPort].value2 bit 4 because the next LocoNet.send(OPC_INPUT_REP, ) function needs this info
             LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[uiRfidPort].value1, svtable.svt.pincfg[uiRfidPort].value2); // Send the state change to LocoNet
             Serial.println();
             Serial.print(F("Sending sensor state ACTIVE. Address: ")); Serial.println(softwareAddress[uiRfidPort], DEC);
@@ -1041,8 +1089,9 @@ void loop()
               Serial.println();
             }
 
-            // GCA51 v150 code updated for latest rfid2ln,
-            setMessageHeader(uiBufWrIdx, uiRfidPort); // fills SendPacketSensor[i].data[0] till .data[4] with data. Address used is the port software address of uiRfidPort.
+            // GCA51 v151 code updated for latest rfid2ln
+            setMessageHeader(uiBufWrIdx, uiRfidPort);
+            // fills SendPacketSensor[i].data[0] till .data[4] with data. Address used is the port software address of uiRfidPort.
 
 #ifdef JMRI4
 
@@ -1223,7 +1272,7 @@ void setMessageHeader(uint8_t rfIndex, uint8_t pIndex)
   SendPacketSensor[rfIndex].data[0] = 0xE4; // OPC - variable length message OPC_LISSY_REP
   SendPacketSensor[rfIndex].data[1] = uiLnSendLength;
 
-  if (bitRead (svtable.svt.pincfg[pIndex].value2, 5)) odd_even = 2;                                            // bitread for bit 5 on SV5, SV8, SV11, SV14 etc.
+  if (bitRead (svtable.svt.pincfg[pIndex].value2, 5)) odd_even = 2;  // bitread for value2 bit 5 on SV5, SV8, SV11, SV14 etc.
   else odd_even = 1;
 
   sensorAddr = (((svtable.svt.pincfg[pIndex].value2 & 0x0F) << 8 ) + (svtable.svt.pincfg[pIndex].value1 << 1 ) + odd_even); // Calculated software address of the port. For Port 1 .value1 == SV4 and .value2 == SV5
@@ -1333,10 +1382,10 @@ boolean processPeerPacket()
       {
         sendPeerPacket(svtable.data[LnPacket->px.d2], svtable.data[LnPacket->px.d2 + 1], svtable.data[LnPacket->px.d2 + 2]);
         return (true);
-      } else if (LnPacket->px.d2 == 99) { // A readReply always includes the d2+1 and d2+2 values, so to read SV100 we must add 2 fake values
+      } else if (LnPacket->px.d2 == 99) { // A readReply always includes the d2+1 and d2+2 values...
         sendPeerPacket(svtable.data[LnPacket->px.d2], svtable.data[LnPacket->px.d2 + 1], 0);
         return (true);
-      } else if (LnPacket->px.d2 == 100) {
+      } else if (LnPacket->px.d2 == 100) {  // ...so to read SV100 we must add 2 fake values
         sendPeerPacket(svtable.data[LnPacket->px.d2], 0, 0);
         return (true);
       } else {
@@ -1348,10 +1397,11 @@ boolean processPeerPacket()
   if (LnPacket->px.d1 == 1) // Write
   {
 
-    if (LnPacket->px.d2 >= 0 && LnPacket->px.d2 < 100) // SV 0 contains board config, SV100 (version) is read only
+    if (LnPacket->px.d2 >= 0 && LnPacket->px.d2 < 100) // SV 0 contains board config, SV100 (Version) is read only
     {
-      //Store data
+      // Store data
       svtable.data[LnPacket->px.d2] = LnPacket->px.d4;
+      // set in EEPROM for persistence
       EEPROM.write(LnPacket->px.d2, LnPacket->px.d4);
 
 #ifdef DEBUG
@@ -1441,7 +1491,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 {
   int n;
 
-  Direction ? Direction = 1 : Direction = 0; // Direction must be changed to 0 or 1, not 0 or 32
+  Direction ? Direction = 1 : Direction = 0; // Direction must be converted to 0 or 1, not 0 or 32
 
   LocoNet_communication(1); // turn on LocoLED
 
@@ -1464,15 +1514,15 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
       Serial.print(n + 1); Serial.print(F(" and pin ")); Serial.println(pinMap[n]);
 #endif
       // If pulse (hardware reset) and Direction, only listen for ON message
-      if (bitRead(svtable.svt.pincfg[n].cnfg, 3) == 1 && bitRead(svtable.svt.pincfg[n].value2, 5) == Direction && Output)
+      if ((bitRead(svtable.svt.pincfg[n].cnfg, 3) == 1) && (bitRead(svtable.svt.pincfg[n].value2, 5) == Direction && Output))
       {
         digitalWrite(pinMap[n], HIGH);
-        delay(PulseTime);  // pulse delay is board configured: The length of the pulse is then between 1 and 2 blink pulse length
+        delay(PulseTime);  // pulse delay is board configured: The length of the pulse is then between 1 and 2 * blink pulse length
         digitalWrite(pinMap[n], LOW);
         break;
       }
       // If continue and hardware reset and Direction
-      else if (bitRead(svtable.svt.pincfg[n].cnfg, 3) == 0 && bitRead(svtable.svt.pincfg[n].cnfg, 2) == 1 && bitRead(svtable.svt.pincfg[n].value2, 5) == Direction)
+      else if ((bitRead(svtable.svt.pincfg[n].cnfg, 3) == 0) && (bitRead(svtable.svt.pincfg[n].cnfg, 2) == 1 && bitRead(svtable.svt.pincfg[n].value2, 5) == Direction))
       {
 #ifdef DEBUG
         Serial.println(F("Hardware reset output reset")); // pulse duration?
@@ -1510,7 +1560,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 //
 //  for (n=8; n<16; n++)                                                                               // Check if Address is assigned on this board, configured as output and same Direction
 //  {
-//    if ((softwareAddress[n]  == Address) &&  (bitRead(svtable.svt.pincfg[n].cnfg,7) == 1))           // Address OK and setup as Output?
+//    if ((softwareAddress[n]  == Address) &&  (bitRead(svtable.svt.pincfg[n].cnfg,7) == 1))           // Address OK and setup as Output
 //        {
 //          #ifdef DEBUG
 //          Serial.print ("found port address: "); Serial.println(Address, DEC);
@@ -1542,7 +1592,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 **********************************************************************************************************************/
 void updateBlink(uint8_t portIdx) {
 
-  if (bitRead(svtable.svt.pincfg[portIdx].cnfg, 4)) // // only blink for cnfg 144/145/208
+  if (bitRead(svtable.svt.pincfg[portIdx].cnfg, 7) && bitRead(svtable.svt.pincfg[portIdx].cnfg, 4))  // only blink for outputs, cnfg 144/145/208
   {
     if (bitRead(svtable.svt.pincfg[portIdx].value2, 4) == HIGH) // only blink when output is ON
     {
@@ -1566,7 +1616,8 @@ void updateBlink(uint8_t portIdx) {
           previousBlinkMillis = previousBlinkMillis + blinkDuration; // save the time when we changed to off
         }
       } else {
-        Serial.print(F("Unexpected updateBlink() for port ")); Serial.println(portIdx);
+        Serial.print(F("Unexpected blinkState ")); Serial.print(blinkState[portIdx]);
+        Serial.print(F(" for Port ")); Serial.println(portIdx);
       }
     } else { // output commanded state if HIGH (off) so turn off pin
       digitalWrite(pinMap[portIdx - 8], HIGH);
