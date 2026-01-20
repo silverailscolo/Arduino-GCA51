@@ -385,7 +385,7 @@ ISR(PCINT1_vect)            // Interrupt service routine. Every single PCINT8..1
 
 /***************************************************************************************************************************
   Purpose: Display the config description for a pin (on Serial Monitor)
-  ***********************/
+***********************/
 //char *getConfig(int pin)
 //{
 //  const char *desc = (char*) malloc (3);  // 3 char max descr
@@ -417,7 +417,7 @@ void turnOn()
   uint8_t s_port;
   char *arg;
   arg = SCmd.next();    // Get the next argument from the SerialCommand object buffer
-  if (arg != NULL)      // As long as it existed, take it
+  if (arg != NULL)      // As long as it exists, take it
   {
     s_port = atoi(arg);  // convert char string to int
     if (s_port > 7 && s_port < 16)
@@ -446,7 +446,7 @@ void turnOff()
   uint8_t s_port;
   char *arg;
   arg = SCmd.next();    // Get the next argument from the SerialCommand object buffer
-  if (arg != NULL)      // As long as it existed, take it
+  if (arg != NULL)      // As long as it exists, take it
   {
     s_port = atoi(arg);  // convert char string to int
     if (s_port > 7 && s_port < 16)
@@ -557,9 +557,10 @@ void portFunction()
     s_port_func = atol(arg);  // convert char string to int
     // validate
     if (isValidConfig(s_port_func)) {
+      // update global vars
       svtable.svt.pincfg[s_port].cnfg = s_port_func;
-      // set in EEPROM for persistence
       svtable.data[3 * (s_port + 1)] = s_port_func;
+      // set in EEPROM for persistence
       EEPROM.write(3 * (s_port + 1), s_port_func);
 
       // set blink bit to ON
@@ -607,10 +608,10 @@ void portReset()
   
   setPortAddress(s_port, s_port_addr, false); // check cnfg bit 7 (input?)
 
-  // set function
+  // set function in global vars
   svtable.svt.pincfg[s_port].cnfg = s_port_func;
-  // set in EEPROM for persistence
   svtable.data[3 * (s_port + 1)] = s_port_func;
+  // set in EEPROM for persistence
   EEPROM.write(3 * (s_port + 1), s_port_func);
 
   Serial.print(F("Port ")); Serial.print(s_port); Serial.print(F(" was reset to "));
@@ -629,7 +630,7 @@ void moduleAddress()
   uint8_t s_board_hi = 1;  // hi board address always 1 on GCA51
   char *arg;
 
-  // Serial.println(F("Run boardAddress()"));
+  // Serial.println(F("Run moduleAddress()"));
   arg = SCmd.next();
   if (arg != NULL)
   {
@@ -654,14 +655,13 @@ void moduleAddress()
     //        return;
     //      }
     // indent next block and add } for GCA50a variable board high address
-    
-    // set defaults in EEPROM
-    EEPROM.write(1, s_board_lo);
-    EEPROM.write(2, 1);
-    
-    // Update global var
+
+    // Set address in global vars
     svtable.svt.addr_low = s_board_lo;
     svtable.svt.addr_high = s_board_hi;
+    // set in EEPROM for persistence
+    EEPROM.write(1, s_board_lo);
+    EEPROM.write(2, 1);
 
     Serial.println(F("New board address set."));
 //    }
@@ -672,15 +672,49 @@ void moduleAddress()
   Serial.print(svtable.svt.addr_low); Serial.print(F("/")); Serial.println(svtable.svt.addr_high);
 }
 
-// Board Blink Rate TODO
+// Board Blink Rate
+void moduleBlinkRate()
+{
+  uint8_t s_board_blink;
+  char *arg;
+
+  // Serial.println(F("Run moduleBlinkRate()"));
+  arg = SCmd.next();
+  if (arg != NULL)
+  {
+    s_board_blink = atoi(arg);  // convert char string to int
+    if (s_board_blink > 15 || s_board_blink < 0)
+    {
+      Serial.print(F("Invalid board blink rate: "));
+      Serial.println(s_board_blink);
+      Serial.println(F("Enter a value between 0 (slow) and 15 (fast)."));
+      return;
+    }
+
+    // Update global vars
+    blinkRate = s_board_blink;
+    blinkDuration = 1000 - 30 * blinkRate;
+    svtable.data[0] = ((blinkRate * 16) | (svtable.data[0] & 0x0F)); // retain bits 0-3
+    // set cnfg in EEPROM
+    EEPROM.write(0, svtable.data[0]);
+
+    Serial.println(F("New board blink rate set."));
+  }
+
+  // print values
+  Serial.print(F("Module blink rate: "));
+  Serial.println(svtable.data[0] >> 4);
+}
 
 void serialHelp()
 {
   Serial.println(F("GCA51 Serial Commands Help"));
   Serial.println(F("==="));
   Serial.println(F("H+Enter: Display this command help"));
-  Serial.println(F("M+Enter: Display module board low/high address"));
-  Serial.println(F("M 82+Enter: Set module board address to 82/1"));
+  Serial.println(F("MA+Enter: Display module board low/high address"));
+  Serial.println(F("MB 6+Enter: Set module blink rate to 6"));
+  Serial.println(F("MB+Enter: Display module blink rate"));
+  Serial.println(F("MA 82+Enter: Set module board address to 82/1"));
   Serial.println(F("P 2+Enter: Display software address of port 2"));
   Serial.println(F("P 2 100+Enter: Set software address of port 2 to 100"));
   Serial.println(F("F 2+Enter: Display function of port 2 (code)"));
@@ -701,6 +735,7 @@ void unrecognized(char *command)
   Serial.println(F(">> Enter H for Command Help"));
 }
 
+// util for SerialCommand callbacks
 void setPortAddress(uint8_t s_port, uint16_t s_port_addr, bool isInput)
 {
   // split port address
@@ -711,11 +746,11 @@ void setPortAddress(uint8_t s_port, uint16_t s_port_addr, bool isInput)
   
   svtable.svt.pincfg[s_port].value1 = newValue1; // low byte
   svtable.svt.pincfg[s_port].value2 = newValue2; // high byte, only change bits 0-3
-  // update global var4
+  // update global vars
   softwareAddress[s_port] = s_port_addr;
-  // set in EEPROM for persistence
   svtable.data[(3 * (s_port + 1)) + 1] = newValue1;
   svtable.data[(3 * (s_port + 1)) + 2] = newValue2;
+  // set in EEPROM for persistence
   EEPROM.write((3 * (s_port + 1)) + 1, newValue1);
   EEPROM.write((3 * (s_port + 1)) + 2, newValue2);
 }
@@ -840,10 +875,11 @@ void setup()
   // Setup callbacks for SerialCommand commands
   SCmd.addCommand("ON",turnOn);          // No arg. turns on ESP onboard LED/Two num args. turns output on
   SCmd.addCommand("OFF",turnOff);        // No arg. turns off ESP onboard LED/Two num args. turns output off
-  SCmd.addCommand("M",moduleAddress);    // No arg. Reads/One num args. sets module address and echos new setting
+  SCmd.addCommand("MA",moduleAddress);   // No arg. Reads/One num args. sets module address and echos new setting
+  SCmd.addCommand("MB",moduleBlinkRate); // No arg. Reads/One num args. sets module blink rate and echos new setting
   SCmd.addCommand("P",portAddress);      // One num arg. Reads/Two num args. sets port address and echos new setting
   SCmd.addCommand("F",portFunction);     // One num arg. Reads/Two num args. sets port function and echos new setting
-  SCmd.addCommand("Z",portReset);        // Resets port address and function to factory defaults and echos new setting
+  SCmd.addCommand("Z",portReset);        // One num arg. Resets port address + function to defaults and echos new setting
   SCmd.addCommand("H",serialHelp);       // Display Serial Commands Help
   SCmd.setDefaultHandler(unrecognized);  // Handler for unmatched command (says "What?")
 #endif
@@ -1363,8 +1399,9 @@ boolean processPeerPacket()
 
     if (LnPacket->px.d2 >= 0 && LnPacket->px.d2 < 100) // SV 0 contains board config, SV100 (Version) is read only
     {
-      //Store data
+      // Store data
       svtable.data[LnPacket->px.d2] = LnPacket->px.d4;
+      // set in EEPROM for persistence
       EEPROM.write(LnPacket->px.d2, LnPacket->px.d4);
 
 #ifdef DEBUG
