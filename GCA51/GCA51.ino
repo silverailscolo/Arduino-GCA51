@@ -501,9 +501,9 @@ void portAddress()
   arg = SCmd.next();
   if (arg != NULL)
   {
-    if (0 < arg <= 2048)
+    s_port_addr = atol(arg);  // convert char string to int
+    if (0 < s_port_addr <= 2048)
     {
-      s_port_addr = atol(arg);  // convert char string to int
       setPortAddress(s_port, s_port_addr, ((svtable.svt.pincfg[s_port].cnfg & 0x80) == 0));
       Serial.print(F("New address set for "));
     }
@@ -898,12 +898,12 @@ void setup()
      Only initialisation; all readers should be initialised before
      any communication
   */
-  for (uint8_t i = 0; i < NR_OF_RFID_PORTS; i++) {
+  for (int i = 0; i < NR_OF_RFID_PORTS; i++) {
     mfrc522[i].PCD_Init(mfrc522Cs[i], RST_PIN);
   }
 
   /* Detect the active readers. If version read != 0xFF => reader active */
-  for (uint8_t i = 0; i < NR_OF_RFID_PORTS; i++) {
+  for (int i = 0; i < NR_OF_RFID_PORTS; i++) {
     byte readReg = mfrc522[i].PCD_ReadRegister(mfrc522[i].VersionReg);
 
     if (bSerialOk) {
@@ -956,10 +956,8 @@ void setup()
 void loop()
 {
   static uint8_t n;
-  static int time_msec;
-  byte temp_IO;
   static unsigned long IO_timing[8];                   // array[8] with Pulse- or Debounce timing for each IO-port
-  static unsigned long CurrentTime;                    // time at this moment
+  //static unsigned long CurrentTime;                    // time at this moment
   currentBlinkMillis = millis();                       // capture the latest value of millis()
   static byte remember_input[8];                       // remembers which input was active.  After "waittime" the program will reset this input(s)
 
@@ -1009,7 +1007,7 @@ void loop()
       if (IO_status[n - 8] == 1)                                                                     // IO_status contains the last known value. At the ISR's this array is filled with new input information
       {
         IO_timing[n - 8] = millis();                                                                 // input is active, start timer
-        LocoNet_communication(1);                                                                    // turn on LocoLED
+        LocoNet_communication(1);                                                        // turn on LocoLED
         bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n - 8]);                                 // Store state in input[n].value2 bit 4 because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
 
         if (svtable.svt.pincfg[n].cnfg & 0x7) // pushbutton/toggle input (15 or 39 or 47) or turnout feedback 1/2 (23 or 55)
@@ -1039,7 +1037,7 @@ void loop()
     { // from LOCOIO docs: Remark: The switch off delay depends on the established blinking rate.
       IO_timing[n - 8] = 0;                                                                           // reset WaitTime
       IO_status[n - 8] = 0;                                                                           // make input (hall-sensor) inactive after WaitTime
-      LocoNet_communication(1);                                                                       // turn on LocoLED
+      LocoNet_communication(1);                                                           // turn on LocoLED
       bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n - 8]);                                    // Store state in input[n].value2 bit 4 because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
       LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[n].value1, svtable.svt.pincfg[n].value2);        // Send the input[n] change to LocoNet
     }
