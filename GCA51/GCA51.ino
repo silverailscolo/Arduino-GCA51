@@ -761,10 +761,10 @@ void setPortAddress(uint8_t s_port, uint16_t s_port_addr, bool isInput)
 // TODO extract a GCA51 setup() method
 void setup()
 {
+  uint8_t n;
   uint32_t uiStartTimer;
   uint16_t uiElapsedDelay;
   uint16_t uiSerialOKDelay = 5000;
-  uint8_t i, n;
   pinMode (LocoLED, OUTPUT);                    // LocoLED pin to indicate LocoNet communication
 
   // start_setup();  // Start values of the board in LocoGCA51.cpp <<<< Lib not available, copied from latest GCA50a
@@ -797,7 +797,8 @@ void setup()
 #ifdef DEBUG
   Serial.println(F("Start reading EEPROM into svtable.data"));
   for (n = 0; n < 101; n++) {
-    svtable.data[n] = EEPROM.read(n);  // Read the values of SV0 till SV100. The values in EEPROM were OK or standardised in start_setup()
+    svtable.data[n] = EEPROM.read(n);
+    // Read the values of SV0 till SV100. The values in EEPROM were OK or standardised in start_setup()
     Serial.print(n); Serial.print(F(": ")); Serial.println(svtable.data[n]);
   }
 #endif
@@ -955,7 +956,7 @@ void setup()
 /************************ MAIN LOOP () *************************/
 void loop()
 {
-  static uint8_t n;
+  uint8_t n;
   static unsigned long IO_timing[8];                   // array[8] with Pulse- or Debounce timing for each IO-port
   //static unsigned long CurrentTime;                    // time at this moment
   currentBlinkMillis = millis();                       // capture the latest value of millis()
