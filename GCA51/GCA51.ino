@@ -638,7 +638,7 @@ void moduleAddress()
     {
       Serial.print(F("Invalid board low address: "));
       Serial.println(s_board_lo);
-      Serial.println(F("Enter a value between 1 and 255, excluding 88."));
+      Serial.println(F("Enter a value between 1 and 255, excluding 80."));
       return;
     }
 
@@ -711,13 +711,13 @@ void serialHelp()
   Serial.println(F("==="));
   Serial.println(F("H+Enter: Display this command help"));
   Serial.println(F("MA+Enter: Display module board low/high address"));
+  Serial.println(F("MA 82+Enter: Set module board address to 82/1 (fixed hi addr."));
   Serial.println(F("MB 6+Enter: Set module blink rate to 6"));
   Serial.println(F("MB+Enter: Display module blink rate"));
-  Serial.println(F("MA 82+Enter: Set module board address to 82/1"));
   Serial.println(F("P 2+Enter: Display software address of port 2"));
   Serial.println(F("P 2 100+Enter: Set software address of port 2 to 100"));
   Serial.println(F("F 2+Enter: Display function of port 2 (code)"));
-  Serial.println(F("F 2 128+Enter: Set function of port 2 to 128 =output Off (valid codes: from 15 up to 208)"));
+  Serial.println(F("F 2 128+Enter: Set function of port 2 to 128 =output Off (checks for valid codes: from 15 up to 208)"));
   Serial.println(F("Z 2+Enter: Factory Reset port 2 (address and function)"));
   Serial.println(F("==="));
 }
@@ -950,6 +950,7 @@ void setup()
   }
 
   // **************************** External Interrupts *****************************
+  // needed for inputs?
 
 } // end of setup()
 
