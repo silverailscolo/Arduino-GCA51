@@ -39,8 +39,8 @@
   the LocoNet Monitor example.
   * The included rfid2ln lib was adapted from https://github.com/lmmeng/rfid2ln
   to compile in Arduino IDE.
-  * Inspired in GCA50 board from Peter Giling - http://www.phgiling.net/
-  * Idea also inspired by LocoShield from SPCoast - http://www.scuba.net/
+  * Inspired on the GCA50 board from Peter Giling - http://www.phgiling.net/
+  * Also inspired by the LocoShield from SPCoast - http://www.scuba.net/
   * Thanks also to Rocrail group - http://www.rocrail.org
   * Thanks to the LocoNet part of the code from Dani Guisado/ClubNCaldes
   ------------------------------------------------------------------------
