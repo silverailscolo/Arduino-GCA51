@@ -70,22 +70,22 @@
 #define PulseTime     300                      // PulseTime for all the Pulse Outputs in msec. - TODO board config SV0 bit y
 #define WaitTime      500                      // Wait Time for all block Inputs in msec.
 #define FlashTime     250                      // Frequency of flasher - TODO board config SV0 bit x
+#define INFORMATPOWERON
 
+//#define ELEMENTCOUNT(x) (sizeof(x) / sizeof(int)) // (sizeof(x[0]) / sizeof(int)  // function for cnfg lookup
+
+boolean bSerialOk = false;
 uint8_t ucBoardAddrHi = 1;                     // board address high; always 1 because GCA51 has no room for high byte in RFID-7 message
 uint8_t ucBoardAddrLo = 88;                    // board address low; default 88
 
-//uint8_t NR_OF_RFID_PORTS = 2;                // GCA51, same as default set in rfid2ln lib, override here for future new hardware?
-unsigned long resetUid[NR_OF_RFID_PORTS];      // stores the timestamp when the old UID from Reader[i] was stored
-
-MFRC522 mfrc522[NR_OF_RFID_PORTS];
-
-#define INFORMATPOWERON
-
-#define ELEMENTCOUNT(x) (sizeof(x) / sizeof(int)) // (sizeof(x[0]) / sizeof(int)
-
 LocoNetSystemVariableClass sv;
 lnMsg *LnPacket;                               // pointer to lnMsg
-lnMsg SendPacketSensor[LN_BUFF_LEN];           // SendPacketSensor is now a uint8_t data[16] array. Must set bounds in Arduino 1.8.19
+
+//uint8_t NR_OF_RFID_PORTS = 2;                // GCA51, same as default set in rfid2ln lib, override here for future new hardware?
+MFRC522 mfrc522[NR_OF_RFID_PORTS];
+unsigned long resetUid[NR_OF_RFID_PORTS];      // stores the timestamp when the old UID from Reader[i] was stored
+
+lnMsg SendPacketSensor[LN_BUFF_LEN];           // SendPacketSensor is a uint8_t data[16] array. Must set bounds in Arduino 1.8.19
 
 uint8_t uiLnSendCheckSumIdx = 13;
 #ifdef JMRI4
@@ -97,8 +97,6 @@ uint8_t uiLnSendMsbIdx = 12;
 uint8_t uiStartChkSen;
 
 uint8_t oldUid[NR_OF_RFID_PORTS][UID_LEN];     // 7 bytes of information from the previous tag seen by each RFID Reader
-
-boolean bSerialOk = false;
 
 byte mfrc522Cs[] = {SDA_1_PIN, SDA_2_PIN};
 
@@ -116,11 +114,11 @@ boolean bSensorActive[NR_OF_RFID_PORTS];
 uint8_t uiActReaders = 0;
 uint8_t uiFirstReaderIdx = 0;
 
-// Arduino Nano pin assignment to each of the 8 free outputs
+// Arduino Nano pin assignment to each of the 8 free ports
 // Actually the Arduino has only 14 digital IO (0 till 13). You can however use the analog inputs 0 - 5 also as digital IO.
 // To change Analog input 0 to a digital IO you should use pin number 14 ==>  pinMode (14, OUTPUT);
 // The second Analog input will give you pinMode 15 etc. The GCA185 board uses all the available IO pins in this way.
-// To connect two RFID-RC522 sensors to the GCA185/GCA51 you need the Arduino pin numbers 2, 10, 11, 12 and 13, so you cannot use these pins for another purpose.
+// To connect two RFID-RC522 sensors to the GCA185/GCA51, you need the Arduino pin numbers 2, 10, 11, 12 and 13, so you cannot use these pins for another purpose.
 // The LocoNet pins, needed for the communication, are the Arduino Nano pin numbers 7 and 8
 
 byte     pinMap[8] = {14, 15, 16, 17, 18, 19, 2, 3}; // The analog inputs are used as digital I/O and that is why the names of these ports are changed.
@@ -794,14 +792,16 @@ void setup()
   svtable.svt.board_cnfg = EEPROM.read(0); // contains board blink rate, etc.
   svtable.svt.addr_low = EEPROM.read(1);
   svtable.svt.addr_high = EEPROM.read(2);
+
 #ifdef DEBUG
   Serial.println(F("Start reading EEPROM into svtable.data"));
-  for (n = 0; n < 101; n++) {
-    svtable.data[n] = EEPROM.read(n);
-    // Read the values of SV0 till SV100. The values in EEPROM were OK or standardised in start_setup()
-    Serial.print(n); Serial.print(F(": ")); Serial.println(svtable.data[n]);
-  }
 #endif
+  for (n = 0; n < 101; n++) {
+    svtable.data[n] = EEPROM.read(n);  // Read the values of SV0 till SV100. The values in EEPROM were OK or standardised in start_setup()
+#ifdef DEBUG
+    Serial.print(n); Serial.print(F(": ")); Serial.println(svtable.data[n]);
+#endif
+  }
 
   // Check for a valid config
   if (svtable.data[100] != VERSION || svtable.svt.addr_low < 1 || svtable.svt.addr_low > 240 || svtable.svt.addr_high != 1 ) // GCA51 addr_high fixed 1
@@ -838,8 +838,9 @@ void setup()
 
     blinkRate = (svtable.data[0] >> 4);  // actual blinkPeriod was matched to an HDL LocoIO
     blinkDuration = 1000 - 30 * blinkRate; // use 50% of blinkPeriod. See also FlashTime const
+#ifdef DEBUG
     Serial.print(F("Board blink rate: ")); Serial.print(blinkRate); Serial.print( ". blink period: "); Serial.print(blinkDuration * 2); Serial.println(F(" ms"));
-
+#endif
     alternateMode = svtable.data[0] & 0x2;
     portRefresh = svtable.data[0] & 0x1;
 
