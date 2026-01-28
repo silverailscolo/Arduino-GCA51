@@ -19,23 +19,7 @@
  AUTHOR : Dani Guisado - http://www.clubncaldes.com - dguisado@gmail.com
  ------------------------------------------------------------------------
  DESCRIPTION:
-    This software emulates the functionality of a GCA50 board from Peter
-    Giling (Giling Computer Applications). This is a LocoNet Interface
-    with 16 I/O that can be individually configured as Input (block sensors)
-    or Outputs (switches, lights,...).
-    Configuration is done through SV LocoNet protocol and can be configured
-    from Rocrail (Programming->GCA->GCA50).
- ------------------------------------------------------------------------
- CREDITS:
- * Based on MRRwA LocoNet libraries for Arduino - http://mrrwa.org/ and
-   the LocoNet Monitor example.
- * Inspired in GCA50 board from Peter Giling - http://www.phgiling.net/
- * Idea also inspired in LocoShield from SPCoast - http://www.scuba.net/
- * Thanks also to Rocrail group - http://www.rocrail.org
- ------------------------------------------------------------------------
- LAST CHANGES:
- 1/9/2019 - Inform state of all inputs at power on, depends on the define #INFORMATPOWERON
-          - Bug fixed on input numbers, they are stored in value1 and value2 different than outputs
+    GCA51 Library of _identical_ common functions with GCA50a.
 *************************************************************************/
 
 #ifndef LOCOGCA50_H_
@@ -97,9 +81,9 @@ void notifyPower( [[maybe_unused]] uint8_t State )
 void notifySensor( [[maybe_unused]] uint16_t Address, [[maybe_unused]] uint8_t State )
 {
   #ifdef DEBUG
-  Serial.print("Sensor: ");
+  Serial.print(F("Sensor: "));
   Serial.print(Address, DEC);
-  Serial.print(" - ");
+  Serial.print(F(" - "));
   Serial.println( State ? "Active" : "Inactive" );
   #endif
 }
@@ -113,11 +97,11 @@ void notifySensor( [[maybe_unused]] uint16_t Address, [[maybe_unused]] uint8_t S
 void notifySwitchReport( [[maybe_unused]] uint16_t Address, [[maybe_unused]] uint8_t Output, [[maybe_unused]] uint8_t Direction )
 {
   #ifdef DEBUG
-  Serial.print("Switch Report: ");
+  Serial.print(F("Switch Report: "));
   Serial.print(Address, DEC);
-  Serial.print(':');
+  Serial.print(F(':'));
   Serial.print(Direction ? "Closed" : "Thrown");
-  Serial.print(" - ");
+  Serial.print(F(" - "));
   Serial.println(Output ? "On" : "Off");
   #endif
 }
@@ -127,11 +111,11 @@ void notifySwitchReport( [[maybe_unused]] uint16_t Address, [[maybe_unused]] uin
 void notifySwitchState( [[maybe_unused]] uint16_t Address, [[maybe_unused]] uint8_t Output, [[maybe_unused]] uint8_t Direction )
 {
   #ifdef DEBUG
-  Serial.print("Switch State: ");
+  Serial.print(F("Switch State: "));
   Serial.print(Address, DEC);
-  Serial.print(':');
+  Serial.print(F(':'));
   Serial.print(Direction ? "Closed" : "Thrown");
-  Serial.print(" - ");
+  Serial.print(F(" - "));
   Serial.println(Output ? "On" : "Off");
   #endif
 }
@@ -141,37 +125,3 @@ void notifySwitchState( [[maybe_unused]] uint16_t Address, [[maybe_unused]] uint
 * Description :
 **********************************************************************************************************************/
 // TODO
-
-
-///*
-// * Function to decode a received LocoNet message and optionally change the board & sensor addresses
-// */
-//void lnDecodeMessage(lnMsg *LnPacket)
-//{
-//    uint8_t msgLen = getLnMsgSize(LnPacket);
-//
-//    // Change the board & sensor addresses.
-//    if(msgLen == 0x10){  //XFERmessage, check if it is for me. Used to change the addresses
-//      if((LnPacket->data[3] == ucBoardAddrLo) || (LnPacket->data[3] == 0)){ //my low address or query
-//        if((LnPacket->data[4] == ucBoardAddrHi) || (LnPacket->data[4] == 0x7F)){ ////my high address or query
-//           //svStatus = sv.processMessage(LnPacket);
-//
-//           processXferMess(LnPacket, &SendPacket);
-//
-//           /*5 sec timeout.*/
-//           LN_STATUS lnSent = LocoNet.send( &SendPacket, LN_BACKOFF_MAX - (ucBoardAddrLo % 10) );   //trying to differentiate the ln answer time
-//
-//          // Rocrail compatible addressing
-//          for (uint8_t i = 0; i < NR_OF_RFID_PORTS; i++) {
-//            calcSenAddr(i);
-//
-//#ifdef _SER_DEBUG
-//            if (bSerialOk) {
-//              printSensorData(i);
-//            }
-//#endif
-//    }//for(uint8_t i
-//        } //if(LnPacket->data[4]
-//      } //if(LnPacket->data[3]
-//    } //if(msgLen == 0x10)
-//}

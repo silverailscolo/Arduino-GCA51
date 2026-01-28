@@ -22,26 +22,27 @@
    The data from the tags are sent to Rocrail with LocoNet communication.
    On the GCA51 board, 8 extra inputs are available as inputs or outputs.
    Configuration is done through SV LocoNet protocol and can be configured
-   from Rocrail (Programming->GCA->GCA50).
+   from Rocrail (Programming->GCA->GCA50), from JMRI (LocoIO Tool) or
+   - since version 152 - from the Serial Console over USB.
    With the SERIALCMD option set, configurable from the Serial Monitor.
   ------------------------------------------------------------------------
-  PIN ASSIGNMENT:
+  NANO PIN ASSIGNMENT:
   0,1 -> Serial, used to debug and LocoNet Monitor (uncomment DEBUG)
-  2,3,4,5,6 -> Configurable I/O from 1 to 5
+  2,3 -> Addresses of max. 2 RFID readers, configurable I/O from 0 to 1
   7 -> LocoNet TX
   8 -> LocoNet RX
-  9,10,11,12,13 -> Configurable I/O from 6 to 10
-  A0,A1,A2,A3,A4,A5-> Configurable I/O from 11 to 16
+  4,5,6,9,10,11 -> N/A, Reserved for RFID communication
+  12,13,A0,A1,A2,A3,A4,A5-> Configurable I/O from 8 to 15
   ------------------------------------------------------------------------
   CREDITS:
-  Based on MRRwA LocoNet libraries for Arduino - http://mrrwa.org/ and
+  * Based on MRRwA LocoNet libraries for Arduino - http://mrrwa.org/ and
   the LocoNet Monitor example.
-  The included rfid2ln lib was adapted from https://github.com/lmmeng/rfid2ln
+  * The included rfid2ln lib was adapted from https://github.com/lmmeng/rfid2ln
   to compile in Arduino IDE.
-  Inspired in GCA50 board from Peter Giling - http://www.phgiling.net/
-  Idea also inspired in LocoShield from SPCoast - http://www.scuba.net/
-  Thanks also to Rocrail group - http://www.rocrail.org
-  Thanks to the LocoNet part of software from Dani Guisado/ClubNCaldes
+  * Inspired on the GCA50 board from Peter Giling - http://www.phgiling.net/
+  * Also inspired by the LocoShield from SPCoast - http://www.scuba.net/
+  * Thanks also to Rocrail group - http://www.rocrail.org
+  * Thanks to the LocoNet part of the code from Dani Guisado/ClubNCaldes
   ------------------------------------------------------------------------
   ISSUES:
   None
@@ -69,22 +70,22 @@
 #define PulseTime     300                      // PulseTime for all the Pulse Outputs in msec. - TODO board config SV0 bit y
 #define WaitTime      500                      // Wait Time for all block Inputs in msec.
 #define FlashTime     250                      // Frequency of flasher - TODO board config SV0 bit x
+#define INFORMATPOWERON
 
+//#define ELEMENTCOUNT(x) (sizeof(x) / sizeof(int)) // (sizeof(x[0]) / sizeof(int)  // function for cnfg lookup
+
+boolean bSerialOk = false;
 uint8_t ucBoardAddrHi = 1;                     // board address high; always 1 because GCA51 has no room for high byte in RFID-7 message
 uint8_t ucBoardAddrLo = 88;                    // board address low; default 88
 
-//uint8_t NR_OF_RFID_PORTS = 2;                // GCA51, same as default set in rfid2ln lib, override here for future new hardware?
-unsigned long resetUid[NR_OF_RFID_PORTS];      // stores the timestamp when the old UID from Reader[i] was stored
-
-MFRC522 mfrc522[NR_OF_RFID_PORTS];
-
-#define INFORMATPOWERON
-
-#define ELEMENTCOUNT(x) (sizeof(x) / sizeof(int)) // (sizeof(x[0]) / sizeof(int)
-
 LocoNetSystemVariableClass sv;
 lnMsg *LnPacket;                               // pointer to lnMsg
-lnMsg SendPacketSensor[LN_BUFF_LEN];           // SendPacketSensor is now a uint8_t data[16] array. Must set bounds in Arduino 1.8.19
+
+//uint8_t NR_OF_RFID_PORTS = 2;                // GCA51, same as default set in rfid2ln lib, override here for future new hardware?
+MFRC522 mfrc522[NR_OF_RFID_PORTS];
+unsigned long resetUid[NR_OF_RFID_PORTS];      // stores the timestamp when the old UID from Reader[i] was stored
+
+lnMsg SendPacketSensor[LN_BUFF_LEN];           // SendPacketSensor is a uint8_t data[16] array. Must set bounds in Arduino 1.8.19
 
 uint8_t uiLnSendCheckSumIdx = 13;
 #ifdef JMRI4
@@ -96,8 +97,6 @@ uint8_t uiLnSendMsbIdx = 12;
 uint8_t uiStartChkSen;
 
 uint8_t oldUid[NR_OF_RFID_PORTS][UID_LEN];     // 7 bytes of information from the previous tag seen by each RFID Reader
-
-boolean bSerialOk = false;
 
 byte mfrc522Cs[] = {SDA_1_PIN, SDA_2_PIN};
 
@@ -115,11 +114,11 @@ boolean bSensorActive[NR_OF_RFID_PORTS];
 uint8_t uiActReaders = 0;
 uint8_t uiFirstReaderIdx = 0;
 
-// Arduino Nano pin assignment to each of the 8 free outputs
+// Arduino Nano pin assignment to each of the 8 free ports
 // Actually the Arduino has only 14 digital IO (0 till 13). You can however use the analog inputs 0 - 5 also as digital IO.
 // To change Analog input 0 to a digital IO you should use pin number 14 ==>  pinMode (14, OUTPUT);
 // The second Analog input will give you pinMode 15 etc. The GCA185 board uses all the available IO pins in this way.
-// To connect two RFID-RC522 sensors to the GCA185/GCA51 you need the Arduino pin numbers 2, 10, 11, 12 and 13, so you cannot use these pins for another purpose.
+// To connect two RFID-RC522 sensors to the GCA185/GCA51, you need the Arduino pin numbers 2, 10, 11, 12 and 13, so you cannot use these pins for another purpose.
 // The LocoNet pins, needed for the communication, are the Arduino Nano pin numbers 7 and 8
 
 byte     pinMap[8] = {14, 15, 16, 17, 18, 19, 2, 3}; // The analog inputs are used as digital I/O and that is why the names of these ports are changed.
@@ -321,8 +320,8 @@ void CalculateAddress()
 
 /***************************************************************************************************************************
   Purpose: assign interrupts to input pins
-  This function is the last function called in de setup() routine when all the IO's have their function, input or output.
-   Only the inputs will get assigned an interrupt
+  This function is the last function called in the setup() routine, after all IO's have their function: input or output.
+  Only the inputs will get assigned an interrupt
 ****************************************************************************************************************************/
 void InitialiseInterrupt()
 {
@@ -500,9 +499,9 @@ void portAddress()
   arg = SCmd.next();
   if (arg != NULL)
   {
-    if (0 < arg <= 2048)
+    s_port_addr = atol(arg);  // convert char string to int
+    if (0 < s_port_addr <= 2048)
     {
-      s_port_addr = atol(arg);  // convert char string to int
       setPortAddress(s_port, s_port_addr, ((svtable.svt.pincfg[s_port].cnfg & 0x80) == 0));
       Serial.print(F("New address set for "));
     }
@@ -639,7 +638,7 @@ void moduleAddress()
     {
       Serial.print(F("Invalid board low address: "));
       Serial.println(s_board_lo);
-      Serial.println(F("Enter a value between 1 and 255, excluding 88."));
+      Serial.println(F("Enter a value between 1 and 255, excluding 80."));
       return;
     }
 
@@ -712,13 +711,13 @@ void serialHelp()
   Serial.println(F("==="));
   Serial.println(F("H+Enter: Display this command help"));
   Serial.println(F("MA+Enter: Display module board low/high address"));
+  Serial.println(F("MA 82+Enter: Set module board address to 82/1 (fixed hi addr."));
   Serial.println(F("MB 6+Enter: Set module blink rate to 6"));
   Serial.println(F("MB+Enter: Display module blink rate"));
-  Serial.println(F("MA 82+Enter: Set module board address to 82/1"));
   Serial.println(F("P 2+Enter: Display software address of port 2"));
   Serial.println(F("P 2 100+Enter: Set software address of port 2 to 100"));
   Serial.println(F("F 2+Enter: Display function of port 2 (code)"));
-  Serial.println(F("F 2 128+Enter: Set function of port 2 to 128 =output Off (valid codes: from 15 up to 208)"));
+  Serial.println(F("F 2 128+Enter: Set function of port 2 to 128 =output Off (checks for valid codes: from 15 up to 208)"));
   Serial.println(F("Z 2+Enter: Factory Reset port 2 (address and function)"));
   Serial.println(F("==="));
 }
@@ -757,16 +756,17 @@ void setPortAddress(uint8_t s_port, uint16_t s_port_addr, bool isInput)
 #endif
 
 /********************** SETUP *************************/
+// TODO extract a GCA51 setup() method
 void setup()
 {
+  uint8_t n;
   uint32_t uiStartTimer;
   uint16_t uiElapsedDelay;
   uint16_t uiSerialOKDelay = 5000;
-  uint8_t i, n;
   pinMode (LocoLED, OUTPUT);                    // LocoLED pin to indicate LocoNet communication
 
   // start_setup();  // Start values of the board in LocoGCA51.cpp <<<< Lib not available, copied from latest GCA50a
-  // rfid2ln boardSetup() assumes 1 RFID reader per board so we can't use it here TODO write a GCA51 setup() method
+  // lib rfid2ln boardSetup() assumes 1 RFID reader per board, so we must override
 
   // Configure the serial port
   Serial.begin(9600); // Initialize serial communications with the PC (old bootloader baud or monitor garbage after flashing; on a new Nano use 115200 bd)
@@ -792,13 +792,16 @@ void setup()
   svtable.svt.board_cnfg = EEPROM.read(0); // contains board blink rate, etc.
   svtable.svt.addr_low = EEPROM.read(1);
   svtable.svt.addr_high = EEPROM.read(2);
+
 #ifdef DEBUG
   Serial.println(F("Start reading EEPROM into svtable.data"));
+#endif
   for (n = 0; n < 101; n++) {
     svtable.data[n] = EEPROM.read(n);  // Read the values of SV0 till SV100. The values in EEPROM were OK or standardised in start_setup()
+#ifdef DEBUG
     Serial.print(n); Serial.print(F(": ")); Serial.println(svtable.data[n]);
-  }
 #endif
+  }
 
   // Check for a valid config
   if (svtable.data[100] != VERSION || svtable.svt.addr_low < 1 || svtable.svt.addr_low > 240 || svtable.svt.addr_high != 1 ) // GCA51 addr_high fixed 1
@@ -817,7 +820,7 @@ void setup()
   }
   else
   {
-    //Configure I/O
+    // Configure I/O
 
     CalculateAddress(); // Calculate software addresses of pins and store in global variable softwareAddress[16]. Prints config to Console
 
@@ -835,8 +838,9 @@ void setup()
 
     blinkRate = (svtable.data[0] >> 4);  // actual blinkPeriod was matched to an HDL LocoIO
     blinkDuration = 1000 - 30 * blinkRate; // use 50% of blinkPeriod. See also FlashTime const
+#ifdef DEBUG
     Serial.print(F("Board blink rate: ")); Serial.print(blinkRate); Serial.print( ". blink period: "); Serial.print(blinkDuration * 2); Serial.println(F(" ms"));
-
+#endif
     alternateMode = svtable.data[0] & 0x2;
     portRefresh = svtable.data[0] & 0x1;
 
@@ -846,8 +850,8 @@ void setup()
 #ifdef DEBUG
     Serial.println(F("Initializing pins..."));
 #endif
-    for (n = 8; n < 16; n++) // The first 8 I/O ports are already set and are not available to users,
-      // except to set addresses of ports 1 and 2 (RFID sensor ports).
+    for (n = 8; n < 16; n++) // The first 8 I/O ports were already set up and not available to users,
+      // except to set addresses of ports 0 and 1 (RFID sensor ports).
       // The actual hardware Nano pin numbers are declared in the global variable pinMap[]
     {
       if (bitRead(svtable.svt.pincfg[n].cnfg, 7))                                         // if cnfg bit 7 == 1, pin is an Output
@@ -896,12 +900,12 @@ void setup()
      Only initialisation; all readers should be initialised before
      any communication
   */
-  for (uint8_t i = 0; i < NR_OF_RFID_PORTS; i++) {
+  for (int i = 0; i < NR_OF_RFID_PORTS; i++) {
     mfrc522[i].PCD_Init(mfrc522Cs[i], RST_PIN);
   }
 
   /* Detect the active readers. If version read != 0xFF => reader active */
-  for (uint8_t i = 0; i < NR_OF_RFID_PORTS; i++) {
+  for (int i = 0; i < NR_OF_RFID_PORTS; i++) {
     byte readReg = mfrc522[i].PCD_ReadRegister(mfrc522[i].VersionReg);
 
     if (bSerialOk) {
@@ -946,6 +950,7 @@ void setup()
   }
 
   // **************************** External Interrupts *****************************
+  // needed for inputs?
 
 } // end of setup()
 
@@ -953,11 +958,9 @@ void setup()
 /************************ MAIN LOOP () *************************/
 void loop()
 {
-  static uint8_t n;
-  static int time_msec;
-  byte temp_IO;
+  uint8_t n;
   static unsigned long IO_timing[8];                   // array[8] with Pulse- or Debounce timing for each IO-port
-  static unsigned long CurrentTime;                    // time at this moment
+  //static unsigned long CurrentTime;                    // time at this moment
   currentBlinkMillis = millis();                       // capture the latest value of millis()
   static byte remember_input[8];                       // remembers which input was active.  After "waittime" the program will reset this input(s)
 
@@ -1007,7 +1010,7 @@ void loop()
       if (IO_status[n - 8] == 1)                                                                     // IO_status contains the last known value. At the ISR's this array is filled with new input information
       {
         IO_timing[n - 8] = millis();                                                                 // input is active, start timer
-        LocoNet_communication(1);                                                                    // turn on LocoLED
+        LocoNet_communication(1);                                                        // turn on LocoLED
         bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n - 8]);                                 // Store state in input[n].value2 bit 4 because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
 
         if (svtable.svt.pincfg[n].cnfg & 0x7) // pushbutton/toggle input (15 or 39 or 47) or turnout feedback 1/2 (23 or 55)
@@ -1037,7 +1040,7 @@ void loop()
     { // from LOCOIO docs: Remark: The switch off delay depends on the established blinking rate.
       IO_timing[n - 8] = 0;                                                                           // reset WaitTime
       IO_status[n - 8] = 0;                                                                           // make input (hall-sensor) inactive after WaitTime
-      LocoNet_communication(1);                                                                       // turn on LocoLED
+      LocoNet_communication(1);                                                           // turn on LocoLED
       bitWrite(svtable.svt.pincfg[n].value2, 4, IO_status[n - 8]);                                    // Store state in input[n].value2 bit 4 because the next LocoNet.send (OPC_INPUT_REP.... function needs this information
       LocoNet.send(OPC_INPUT_REP, svtable.svt.pincfg[n].value1, svtable.svt.pincfg[n].value2);        // Send the input[n] change to LocoNet
     }
@@ -1059,7 +1062,6 @@ void loop()
   /********* Check the RFID readers *************/
 
   // v151 added flexible loop, copied from rfid2ln, renamed uiAddrSenFull[i] to softwareAddress[i]
-  // TODO FIX BUG softwareAddress after 10 reads goes negative?
   if (uiActReaders > 0) {
     if (uiBufCnt < LN_BUFF_LEN - 1) { // if buffer not full
 #if USE_INTERRUPT
@@ -1333,7 +1335,7 @@ void setMessageHeader(uint8_t rfIndex, uint8_t pIndex)
   - 192 Block detector
   - 208 Block detector - Blink
 
-  Other LocoIO functions common with GCA50a are in CGA51Func.cpp */
+  All LocoIO functions common with GCA50a are in CGA51Func.cpp */
 
 boolean processPeerPacket()
 {
@@ -1385,7 +1387,7 @@ boolean processPeerPacket()
       } else if (LnPacket->px.d2 == 99) { // A readReply always includes the d2+1 and d2+2 values...
         sendPeerPacket(svtable.data[LnPacket->px.d2], svtable.data[LnPacket->px.d2 + 1], 0);
         return (true);
-      } else if (LnPacket->px.d2 == 100) {  // ...so to read SV100 we must add 2 fake values
+      } else if (LnPacket->px.d2 == 100) {  // so to read SV100 we must add 2 fake values in the reply
         sendPeerPacket(svtable.data[LnPacket->px.d2], 0, 0);
         return (true);
       } else {
@@ -1472,7 +1474,6 @@ void sendPeerPacket(uint8_t p0, uint8_t p1, uint8_t p2)
 #endif
 }
 
-
 /*********************************************************************************************************************
   Purpose:
   Description : This call-back function is called from LocoNet.processSwitchSensorMessage
@@ -1548,7 +1549,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 }
 
 /*********************************************************************************************************************
-  GCA51 v150 variant, simpler
+  GCA51 v150 variant, simpler... Also note: [n-8]
 **********************************************************************************************************************/
 //void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 //{
@@ -1575,7 +1576,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 
 /*********************************************************************************************************************
   Purpose:      Handle blink timer if output commanded state is ON. Turn output off if commanded state is OFF.
-  Description : Adapted from GCA51 v150 LocoIO (n=8; n<16) and .cfg bit 4 checked.
+  Description : Adapted from GCA51 v150 LocoIO (n=8; n<16) and .cfg bit 4 checked. New in GCA51 v151.
 
   Globals:
   blinkRate (Board setting) is in range 0 - 15

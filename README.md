@@ -16,6 +16,16 @@ Version 1.52 includes:
 
 The code requires GCA51 hardware, available as a PCB or kit from [P. Giling](https://wiki.rocrail.net/doku.php?id=gca51-en).
 
+### Credits
+* Based on [MRRwA LocoNet libraries for Arduino](http://mrrwa.org/) and
+  its LocoNet Monitor example.
+* The included `rfid2ln` lib was adapted from https://github.com/lmmeng/rfid2ln
+  to compile in Arduino IDE.
+* Inspired on the GCA50 board from [Peter Giling](http://www.phgiling.net/)
+* Also inspired by the LocoShield from [SPCoast](http://www.scuba.net/)
+* Thanks also to [Rocrail group](http://www.rocrail.org)
+* Thanks to the LocoNet part of the code from [Dani Guisado/ClubNCaldes](http://www.clubncaldes.com)
+
 ## Installation
 
 Follow the Arduino IDE guidelines. 
